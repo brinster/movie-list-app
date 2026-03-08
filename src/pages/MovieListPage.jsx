@@ -41,7 +41,7 @@ export default function MovieListPage() {
             <Th>Poster</Th>
             <Th>Title</Th>
             <Th>Year</Th>
-            <Th>Distributor</Th>
+            <Th>Type</Th>
             <Th>Added By</Th>
             {/* <Th>Added At</Th> */}
           </Tr>
@@ -64,7 +64,7 @@ export default function MovieListPage() {
               </Td>
               <Td>{m.title}</Td>
               <Td>{m.year || "-"}</Td>
-              <Td>{m.distributor || "-"}</Td>
+              <Td>{m.type || "-"}</Td>
               <Td>{m.added_by || "-"}</Td>
               {/* <Td>{m.added_at ? new Date(m.added_at).toLocaleString() : "-"}</Td> */}
             </Tr>

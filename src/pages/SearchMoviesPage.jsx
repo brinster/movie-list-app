@@ -17,6 +17,7 @@ import {
   ModalFooter,
   ModalBody,
   ModalCloseButton,
+  Select,
   useDisclosure,
 } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
@@ -25,10 +26,25 @@ export default function SearchMoviesPage() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [selectedMovie, setSelectedMovie] = useState(null);
-  const [distributor, setDistributor] = useState("");
-  const [addedBy, setAddedBy] = useState("");
+  const [type, setType] = useState(""); // type dropdown
+  const [addedBy, setAddedBy] = useState(""); // added_by dropdown
   const { isOpen, onOpen, onClose } = useDisclosure();
   const navigate = useNavigate();
+
+  const typeOptions = [
+    "4K UHD",
+    "A24",
+    "Arrow",
+    "Blu-ray",
+    "Criterion",
+    "DVD",
+    "Kino Lorber",
+    "Paramount",
+    "Shout! Factory",
+    "Steelbook",
+  ]; // alphabetized
+
+  const addedByOptions = ["Jr", "Sr"]; // dropdown options
 
   // Search TMDB
   const searchMovies = async () => {
@@ -55,8 +71,8 @@ export default function SearchMoviesPage() {
   // Open modal and select movie to add
   const openAddModal = (movie) => {
     setSelectedMovie(movie);
-    setDistributor("");
-    setAddedBy("");
+    setType(""); // reset type
+    setAddedBy(""); // reset addedBy
     onOpen();
   };
 
@@ -73,7 +89,7 @@ export default function SearchMoviesPage() {
       poster_url: selectedMovie.poster_path
         ? `https://image.tmdb.org/t/p/w200${selectedMovie.poster_path}`
         : null,
-      distributor: distributor || null,
+      type: type || null,
       added_by: addedBy || null,
     };
 
@@ -148,16 +164,31 @@ export default function SearchMoviesPage() {
           <ModalCloseButton />
           <ModalBody>
             <VStack spacing={4}>
-              <Input
-                placeholder="Distributor (optional)"
-                value={distributor}
-                onChange={(e) => setDistributor(e.target.value)}
-              />
-              <Input
-                placeholder="Your Name"
+              {/* Type dropdown */}
+              <Select
+                placeholder="Select type"
+                value={type}
+                onChange={(e) => setType(e.target.value)}
+              >
+                {typeOptions.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </Select>
+
+              {/* Added By dropdown */}
+              <Select
+                placeholder="Select who added"
                 value={addedBy}
                 onChange={(e) => setAddedBy(e.target.value)}
-              />
+              >
+                {addedByOptions.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </Select>
             </VStack>
           </ModalBody>
           <ModalFooter>
