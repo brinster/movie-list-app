@@ -117,6 +117,11 @@ export default function SearchMoviesPage() {
           placeholder="Search movies"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              searchMovies(); // Trigger search on Enter
+            }
+          }}
         />
         <Button onClick={searchMovies} colorScheme="teal">
           Search
@@ -179,7 +184,7 @@ export default function SearchMoviesPage() {
 
               {/* Added By dropdown */}
               <Select
-                placeholder="“Added by"
+                placeholder="Added by"
                 value={addedBy}
                 onChange={(e) => setAddedBy(e.target.value)}
               >

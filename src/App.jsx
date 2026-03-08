@@ -13,7 +13,7 @@ function App() {
         {/* Inner Box: responsive width */}
         <Box maxW={{ base: "95%", md: "1000px" }} mx="auto" p={4} color="white">
           <Heading mb={6} textAlign="center">
-            Movies in your library
+            Movies Our Library
           </Heading>
 
           <Box mb={4} textAlign="center">
