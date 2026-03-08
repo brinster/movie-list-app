@@ -10,13 +10,12 @@ function App() {
     <Router>
       {/* Outer Box: full width, dark background */}
       <Box bg="gray.900" minH="100vh" w="100%">
-        {/* Inner Box: centered content with max width */}
-        <Box maxW="1000px" mx="auto" p={4} color="white">
+        {/* Inner Box: responsive width */}
+        <Box maxW={{ base: "95%", md: "1000px" }} mx="auto" p={4} color="white">
           <Heading mb={6} textAlign="center">
             Movies in your library
           </Heading>
 
-          {/* Optional link to Search page */}
           <Box mb={4} textAlign="center">
             <Link to="/search">
               <Button colorScheme="teal">Search & Add Movies</Button>

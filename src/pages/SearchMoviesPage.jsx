@@ -166,7 +166,7 @@ export default function SearchMoviesPage() {
             <VStack spacing={4}>
               {/* Type dropdown */}
               <Select
-                placeholder="Select type"
+                placeholder="Type"
                 value={type}
                 onChange={(e) => setType(e.target.value)}
               >
@@ -179,7 +179,7 @@ export default function SearchMoviesPage() {
 
               {/* Added By dropdown */}
               <Select
-                placeholder="Select who added"
+                placeholder="“Added by"
                 value={addedBy}
                 onChange={(e) => setAddedBy(e.target.value)}
               >
