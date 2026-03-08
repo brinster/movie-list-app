@@ -10,7 +10,6 @@ import {
   Td,
   TableContainer,
   Image,
-  Box,
 } from "@chakra-ui/react";
 
 export default function MovieListPage() {
