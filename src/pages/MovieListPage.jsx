@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import { supabase } from "../supabaseClient";
 import {
   Table, Thead, Tbody, Tr, Th, Td, TableContainer,
-  Box, Input, Select, HStack, Image, Text, Button,
+  Box, Input, Select, HStack, Image, Text, Button, VStack
 } from "@chakra-ui/react";
 import { TriangleDownIcon, TriangleUpIcon } from "@chakra-ui/icons";
 import PosterCollage from "../components/PosterCollage";
@@ -13,11 +13,22 @@ export default function MovieListPage() {
   const [filterType, setFilterType] = useState("");
   const [filterFormat, setFilterFormat] = useState("");
   const [filterStudio, setFilterStudio] = useState("");
+  const [filterStatuses, setFilterStatuses] = useState([]); 
   const [sortConfig, setSortConfig] = useState([{ key: "added_at", direction: "desc" }]);
 
   const typeOptions = ["Steelbook", "Box Set", "Special Edition", "None"];
   const formatOptions = ["4K + BD", "4K", "BD", "DVD"];
   const studioOptions = ["A24", "Arrow", "Criterion", "Kino Lorber", "Lionsgate", "Paramount", "Shout!", "Sony", "Universal", "Warner Bros", "None"];
+  
+  // Custom color mapping to match the table exactly
+  const statusOptions = [
+    { label: "👀 Let's Watch", value: "lets_watch", activeBg: "yellow.900", activeText: "yellow.300", activeBorder: "yellow.700" },
+    { label: "✓ 👀 We Watched", value: "we_watched", activeBg: "green.900", activeText: "green.300", activeBorder: "green.700" },
+    { label: "✓ Sr Watched", value: "sr_watched", activeBg: "purple.900", activeText: "purple.300", activeBorder: "purple.700" },
+    { label: "✓ Jr Watched", value: "jr_watched", activeBg: "blue.900", activeText: "blue.300", activeBorder: "blue.700" },
+    { label: "📍 At Sr's", value: "loc_sr", activeBg: "purple.900", activeText: "purple.300", activeBorder: "purple.700" },
+    { label: "📍 At Jr's", value: "loc_jr", activeBg: "blue.900", activeText: "blue.300", activeBorder: "blue.700" },
+  ];
 
   useEffect(() => { fetchMovies(); }, []);
 
@@ -27,12 +38,17 @@ export default function MovieListPage() {
     else setMovies(data || []);
   };
 
+  const toggleStatusFilter = (val) => {
+    setFilterStatuses(prev => 
+      prev.includes(val) ? prev.filter(item => item !== val) : [...prev, val]
+    );
+  };
+
   const openLetterboxd = (title, year) => {
     if (!title) return;
     const slugify = (str) => str.toLowerCase().replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-');
     const baseSlug = slugify(title);
-    const knownDuplicates = ["parasite", "dune", "the-thing", "halloween", "suspiria", "oldboy"];
-    const finalSlug = (knownDuplicates.includes(baseSlug) && year) ? `${baseSlug}-${year}` : baseSlug;
+    const finalSlug = (["parasite", "dune", "the-thing", "halloween", "suspiria", "oldboy"].includes(baseSlug) && year) ? `${baseSlug}-${year}` : baseSlug;
     window.open(`https://letterboxd.com/film/${finalSlug}/`, "_blank");
   };
 
@@ -78,6 +94,22 @@ export default function MovieListPage() {
     if (filterStudio) filtered = filtered.filter((m) => filterStudio === "None" ? !m.studio : m.studio === filterStudio);
     if (filterType) filtered = filtered.filter((m) => filterType === "None" ? !m.type : m.type === filterType);
     
+    if (filterStatuses.length > 0) {
+      filtered = filtered.filter((m) => {
+        return filterStatuses.every(status => {
+          switch (status) {
+            case "lets_watch": return m.watch_together === "yes";
+            case "we_watched": return m.watch_together === "completed";
+            case "sr_watched": return m.sr === "watched";
+            case "jr_watched": return m.jr === "watched";
+            case "loc_sr": return m.location === "Sr";
+            case "loc_jr": return m.location === "Jr";
+            default: return true;
+          }
+        });
+      });
+    }
+
     filtered.sort((a, b) => {
       for (const sort of sortConfig) {
         let valA = a[sort.key] ?? "";
@@ -95,13 +127,13 @@ export default function MovieListPage() {
       return 0;
     });
     return filtered;
-  }, [movies, searchQuery, filterType, filterFormat, filterStudio, sortConfig]);
+  }, [movies, searchQuery, filterType, filterFormat, filterStudio, filterStatuses, sortConfig]);
 
   return (
     <Box position="relative" zIndex={1}>
       <PosterCollage movies={movies} />
       <Box bg="gray.800" borderRadius="12px" overflow="hidden" boxShadow="0 4px 24px rgba(0,0,0,0.35)">
-        <Box px={4} py={3} borderBottom="1px solid" borderColor="whiteAlpha.100">
+        <VStack align="stretch" spacing={3} p={4} borderBottom="1px solid" borderColor="whiteAlpha.100">
           <HStack spacing={2} flexWrap="wrap">
             <Input placeholder="Search titles..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} maxW="200px" size="sm" bg="gray.700" color="white" />
             {[{ p: "Format", v: filterFormat, set: setFilterFormat, opt: formatOptions }, { p: "Studio", v: filterStudio, set: setFilterStudio, opt: studioOptions }, { p: "Type", v: filterType, set: setFilterType, opt: typeOptions }].map((f) => (
@@ -110,7 +142,36 @@ export default function MovieListPage() {
               </Select>
             ))}
           </HStack>
-        </Box>
+
+          <HStack spacing={2} flexWrap="wrap">
+            <Text fontSize="10px" fontWeight="bold" color="whiteAlpha.400" mr={1} letterSpacing="wider">STATUS FILTERS:</Text>
+            {statusOptions.map((opt) => {
+              const isActive = filterStatuses.includes(opt.value);
+              return (
+                <Button
+                  key={opt.value}
+                  size="xs"
+                  onClick={() => toggleStatusFilter(opt.value)}
+                  borderRadius="full"
+                  fontSize="10px"
+                  variant="outline"
+                  /* Manual color matching to the table row buttons */
+                  bg={isActive ? opt.activeBg : "transparent"}
+                  color={isActive ? opt.activeText : "whiteAlpha.400"}
+                  borderColor={isActive ? opt.activeBorder : "whiteAlpha.100"}
+                  _hover={{ borderColor: isActive ? opt.activeBorder : "whiteAlpha.400", bg: isActive ? opt.activeBg : "whiteAlpha.50" }}
+                >
+                  {opt.label}
+                </Button>
+              );
+            })}
+            {filterStatuses.length > 0 && (
+              <Button size="xs" variant="ghost" colorScheme="gray" color="whiteAlpha.500" onClick={() => setFilterStatuses([])} fontSize="10px" ml={2}>
+                Reset
+              </Button>
+            )}
+          </HStack>
+        </VStack>
 
         <TableContainer>
           <Table variant="unstyled" size="sm">
@@ -118,6 +179,9 @@ export default function MovieListPage() {
               <Tr>
                 <Th px={4} py={3} color="whiteAlpha.400">Poster</Th>
                 <Th px={4} py={3} color="whiteAlpha.400" cursor="pointer" onClick={(e) => requestSort("title", e)}>Title {getSortIcon("title")}</Th>
+                <Th px={4} py={3} color="whiteAlpha.400" cursor="pointer" onClick={(e) => requestSort("format", e)}>Format {getSortIcon("format")}</Th>
+                <Th px={4} py={3} color="whiteAlpha.400" cursor="pointer" onClick={(e) => requestSort("studio", e)}>Studio {getSortIcon("studio")}</Th>
+                <Th px={4} py={3} color="whiteAlpha.400" cursor="pointer" onClick={(e) => requestSort("type", e)}>Type {getSortIcon("type")}</Th>
                 <Th px={4} py={3} color="whiteAlpha.400">Status</Th>
               </Tr>
             </Thead>
@@ -133,16 +197,19 @@ export default function MovieListPage() {
                     <Text as="span" cursor="pointer" _hover={{ color: "teal.300", textDecoration: "underline" }} onClick={() => openLetterboxd(m.title, m.year)}>{m.title}</Text>
                     <Text fontSize="11px" color="whiteAlpha.500">{m.year}</Text>
                   </Td>
+                  <Td px={4} py={2} color="whiteAlpha.700" fontSize="12px">{m.format || "-"}</Td>
+                  <Td px={4} py={2} color="whiteAlpha.700" fontSize="12px">{m.studio || "-"}</Td>
+                  <Td px={4} py={2} color="whiteAlpha.700" fontSize="12px">{m.type || "-"}</Td>
                   <Td px={4} py={2}>
                     <HStack spacing={1}>
                       <Button size="xs" onClick={() => cycleWatch(m)} border="1px solid" bg={m.watch_together === "yes" ? "yellow.900" : m.watch_together === "completed" ? "green.900" : "transparent"} color={m.watch_together === "yes" ? "yellow.300" : m.watch_together === "completed" ? "green.300" : "whiteAlpha.400"} borderColor={m.watch_together === "yes" ? "yellow.700" : m.watch_together === "completed" ? "green.700" : "whiteAlpha.100"}>
-                        {m.watch_together === "completed" ? "✓👀" : "👀"}
+                        {m.watch_together === "completed" ? "✓ 👀" : "👀"}
                       </Button>
                       <Button size="xs" onClick={() => cyclePerson(m, "sr")} border="1px solid" bg={m.sr === "watched" ? "purple.900" : "transparent"} color={m.sr === "watched" ? "purple.300" : "whiteAlpha.400"} borderColor={m.sr === "watched" ? "purple.700" : "whiteAlpha.100"}>
-                        {m.sr === "watched" ? "✓Sr" : "Sr"}
+                        {m.sr === "watched" ? "✓ Sr" : "Sr"}
                       </Button>
                       <Button size="xs" onClick={() => cyclePerson(m, "jr")} border="1px solid" bg={m.jr === "watched" ? "blue.900" : "transparent"} color={m.jr === "watched" ? "blue.300" : "whiteAlpha.400"} borderColor={m.jr === "watched" ? "blue.700" : "whiteAlpha.100"}>
-                        {m.jr === "watched" ? "✓Jr" : "Jr"}
+                        {m.jr === "watched" ? "✓ Jr" : "Jr"}
                       </Button>
                       <Button size="xs" onClick={() => cycleLocation(m)} border="1px solid" bg={m.location === "Sr" ? "purple.900" : m.location === "Jr" ? "blue.900" : "transparent"} color={m.location === "Sr" ? "purple.300" : m.location === "Jr" ? "blue.300" : "whiteAlpha.400"} borderColor={m.location === "Sr" ? "purple.700" : m.location === "Jr" ? "blue.700" : "whiteAlpha.100"}>
                         📍{m.location || ""}

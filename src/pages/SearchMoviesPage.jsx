@@ -12,10 +12,11 @@ export default function SearchMoviesPage() {
     const [results, setResults] = useState([]);
     const [selectedMovie, setSelectedMovie] = useState(null);
     const [movies, setMovies] = useState([]);
+    
+    // Filters and Status States
     const [format, setFormat] = useState("");
     const [studio, setStudio] = useState("");
     const [type, setType] = useState("");
-    
     const [watchTogether, setWatchTogether] = useState(null); 
     const [sr, setSr] = useState(null);
     const [jr, setJr] = useState(null);
@@ -44,8 +45,14 @@ export default function SearchMoviesPage() {
 
     const openAddModal = (movie) => {
         setSelectedMovie(movie);
-        setFormat(""); setStudio(""); setType(""); setWatchTogether(null);
-        setSr(null); setJr(null); setLocation(null);
+        // Resetting all fields for a fresh add
+        setFormat(""); 
+        setStudio(""); 
+        setType(""); 
+        setWatchTogether(null);
+        setSr(null); 
+        setJr(null); 
+        setLocation(null);
         onOpen();
     };
 
@@ -55,8 +62,8 @@ export default function SearchMoviesPage() {
             nextState = "yes";
         } else if (watchTogether === "yes") {
             nextState = "completed";
-            setSr("watched"); 
-            setJr("watched"); 
+            setSr("watched"); // Auto-select Sr
+            setJr("watched"); // Auto-select Jr
         } else {
             nextState = null;
         }
@@ -70,10 +77,18 @@ export default function SearchMoviesPage() {
             title: selectedMovie.title,
             year: selectedMovie.release_date ? selectedMovie.release_date.split("-")[0] : null,
             poster_url: selectedMovie.poster_path ? `https://image.tmdb.org/t/p/w200${selectedMovie.poster_path}` : null,
-            format: format || null, studio: studio || null, type: type || null,
-            watch_together: watchTogether, sr: sr, jr: jr, location: location,
+            format: format || null, 
+            studio: studio || null, 
+            type: type || null,
+            watch_together: watchTogether, 
+            sr: sr, 
+            jr: jr, 
+            location: location,
         });
-        if (!error) { onClose(); alert(`${selectedMovie.title} added!`); }
+        if (!error) { 
+            onClose(); 
+            alert(`${selectedMovie.title} added!`); 
+        }
     };
 
     const selectStyle = { bg: "gray.700", border: "1px solid", borderColor: "whiteAlpha.100", color: "white" };
@@ -93,7 +108,7 @@ export default function SearchMoviesPage() {
                     <SimpleGrid columns={[2, 3, 4]} spacing={3}>
                         {results.map((m) => (
                             <Box key={m.id} onClick={() => openAddModal(m)} cursor="pointer" bg="gray.700" borderRadius="8px" overflow="hidden" _hover={{ transform: "translateY(-3px)", borderColor: "teal.500" }} border="1px solid" borderColor="whiteAlpha.100">
-                                <Image src={`https://image.tmdb.org/t/p/w200${m.poster_path}`} alt={m.title} />
+                                <Image src={`https://image.tmdb.org/t/p/w200${m.poster_path}`} alt={m.title} fallbackSrc="https://via.placeholder.com/200x300?text=No+Poster" />
                                 <Box p={2}><Text fontSize="12px" fontWeight="600" color="white" noOfLines={1}>{m.title}</Text></Box>
                             </Box>
                         ))}
@@ -111,9 +126,13 @@ export default function SearchMoviesPage() {
                             <Select placeholder="Format" value={format} onChange={(e) => setFormat(e.target.value)} {...selectStyle}>
                                 {formatOptions.map(o => <option key={o} style={{background:"#2d3748"}}>{o}</option>)}
                             </Select>
+                            
+                            {/* Restored Studio Filter */}
                             <Select placeholder="Studio (optional)" value={studio} onChange={(e) => setStudio(e.target.value)} {...selectStyle}>
                                 {studioOptions.map(o => <option key={o} style={{background:"#2d3748"}}>{o}</option>)}
                             </Select>
+                            
+                            {/* Restored Type Filter */}
                             <Select placeholder="Type (optional)" value={type} onChange={(e) => setType(e.target.value)} {...selectStyle}>
                                 {typeOptions.map(o => <option key={o} style={{background:"#2d3748"}}>{o}</option>)}
                             </Select>
@@ -121,15 +140,22 @@ export default function SearchMoviesPage() {
                             <Box pt={2}>
                                 <Text fontSize="11px" fontWeight="700" mb={2} letterSpacing="0.1em" textTransform="uppercase" color="whiteAlpha.400">Status</Text>
                                 <HStack spacing={2}>
+                                    {/* Watch Together Button */}
                                     <Button size="sm" flex={1} onClick={handleWatchCycle} border="1px solid" bg={watchTogether === "yes" ? "yellow.900" : watchTogether === "completed" ? "green.900" : "transparent"} color={watchTogether === "yes" ? "yellow.300" : watchTogether === "completed" ? "green.300" : "whiteAlpha.400"} borderColor={watchTogether === "yes" ? "yellow.700" : watchTogether === "completed" ? "green.700" : "whiteAlpha.100"}>
                                         {watchTogether === "completed" ? "✓ 👀" : "👀"}
                                     </Button>
+                                    
+                                    {/* Sr Button */}
                                     <Button size="sm" flex={1} onClick={() => setSr(sr === "watched" ? null : "watched")} border="1px solid" bg={sr === "watched" ? "purple.900" : "transparent"} color={sr === "watched" ? "purple.300" : "whiteAlpha.400"} borderColor={sr === "watched" ? "purple.700" : "whiteAlpha.100"}>
                                         {sr === "watched" ? "✓ Sr" : "Sr"}
                                     </Button>
+                                    
+                                    {/* Jr Button */}
                                     <Button size="sm" flex={1} onClick={() => setJr(jr === "watched" ? null : "watched")} border="1px solid" bg={jr === "watched" ? "blue.900" : "transparent"} color={jr === "watched" ? "blue.300" : "whiteAlpha.400"} borderColor={jr === "watched" ? "blue.700" : "whiteAlpha.100"}>
                                         {jr === "watched" ? "✓ Jr" : "Jr"}
                                     </Button>
+                                    
+                                    {/* Location Button */}
                                     <Button size="sm" flex={1} onClick={() => setLocation(location === "Sr" ? "Jr" : location === "Jr" ? null : "Sr")} border="1px solid" bg={location === "Sr" ? "purple.900" : location === "Jr" ? "blue.900" : "transparent"} color={location === "Sr" ? "purple.300" : location === "Jr" ? "blue.300" : "whiteAlpha.400"} borderColor={location === "Sr" ? "purple.700" : location === "Jr" ? "blue.700" : "whiteAlpha.100"}>
                                         📍{location || ""}
                                     </Button>
