@@ -26,29 +26,37 @@ export default function SearchMoviesPage() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [selectedMovie, setSelectedMovie] = useState(null);
-  const [type, setType] = useState(""); // type dropdown
-  const [addedBy, setAddedBy] = useState(""); // added_by dropdown
+
+  const [format, setFormat] = useState("");
+  const [studio, setStudio] = useState("");
+  const [type, setType] = useState("");
+
   const { isOpen, onOpen, onClose } = useDisclosure();
   const navigate = useNavigate();
 
   const typeOptions = [
-    "4K UHD",
+    "Steelbook",
+    "Box Set"
+  ];
+
+  const formatOptions = ["4K + BD", "4K", "BD", "DVD"];
+
+  const studioOptions = [
     "A24",
     "Arrow",
-    "Blu-ray",
     "Criterion",
-    "DVD",
     "Kino Lorber",
     "Paramount",
-    "Shout! Factory",
-    "Steelbook",
-  ]; // alphabetized
-
-  const addedByOptions = ["Jr", "Sr"]; // dropdown options
+    "Shout!",
+    "Sony",
+    "Universal",
+    "Warner Bros",
+  ];
 
   // Search TMDB
   const searchMovies = async () => {
     if (!query) return;
+
     const encodedQuery = encodeURIComponent(query);
 
     try {
@@ -68,15 +76,14 @@ export default function SearchMoviesPage() {
     }
   };
 
-  // Open modal and select movie to add
   const openAddModal = (movie) => {
     setSelectedMovie(movie);
-    setType(""); // reset type
-    setAddedBy(""); // reset addedBy
+    setFormat("");
+    setStudio("");
+    setType("");
     onOpen();
   };
 
-  // Final add to Supabase
   const addMovie = async () => {
     if (!selectedMovie) return;
 
@@ -89,15 +96,16 @@ export default function SearchMoviesPage() {
       poster_url: selectedMovie.poster_path
         ? `https://image.tmdb.org/t/p/w200${selectedMovie.poster_path}`
         : null,
+      format: format || null,
+      studio: studio || null,
       type: type || null,
-      added_by: addedBy || null,
     };
 
     const { error } = await supabase.from("movies").insert(insertData);
 
     if (error) {
       console.error("Supabase insert error:", error);
-      alert("Failed to add movie. Check console for details.");
+      alert("Failed to add movie. Check console.");
     } else {
       alert(`${selectedMovie.title} added successfully!`);
       onClose();
@@ -106,21 +114,19 @@ export default function SearchMoviesPage() {
 
   return (
     <VStack spacing={4} align="stretch">
-      {/* Back button */}
+
       <Button colorScheme="teal" onClick={() => navigate("/")}>
-        &larr; Back to Library
+        ← Back to Library
       </Button>
 
-      {/* Search input */}
+      {/* Search */}
       <HStack>
         <Input
           placeholder="Search movies"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              searchMovies(); // Trigger search on Enter
-            }
+            if (e.key === "Enter") searchMovies();
           }}
         />
         <Button onClick={searchMovies} colorScheme="teal">
@@ -128,7 +134,7 @@ export default function SearchMoviesPage() {
         </Button>
       </HStack>
 
-      {/* Movie results */}
+      {/* Results */}
       <SimpleGrid columns={[1, 2]} spacing={4}>
         {results.map((m) => (
           <Box
@@ -146,9 +152,11 @@ export default function SearchMoviesPage() {
                 borderRadius="md"
               />
             )}
+
             <Text fontWeight="bold">
               {m.title} ({m.release_date?.split("-")[0] || "N/A"})
             </Text>
+
             <Button
               size="sm"
               mt={2}
@@ -161,49 +169,62 @@ export default function SearchMoviesPage() {
         ))}
       </SimpleGrid>
 
-      {/* Add Movie Modal */}
+      {/* Add Modal */}
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
         <ModalContent>
           <ModalHeader>Add {selectedMovie?.title}</ModalHeader>
           <ModalCloseButton />
+
           <ModalBody>
             <VStack spacing={4}>
-              {/* Type dropdown */}
+
+              {/* Format */}
               <Select
-                placeholder="Type"
+                placeholder="Format"
+                value={format}
+                onChange={(e) => setFormat(e.target.value)}
+              >
+                {formatOptions.map((opt) => (
+                  <option key={opt}>{opt}</option>
+                ))}
+              </Select>
+
+              {/* Studio (optional) */}
+              <Select
+                placeholder="Studio (optional)"
+                value={studio}
+                onChange={(e) => setStudio(e.target.value)}
+              >
+                {studioOptions.map((opt) => (
+                  <option key={opt}>{opt}</option>
+                ))}
+              </Select>
+
+              {/* Type (optional) */}
+              <Select
+                placeholder="Type (optional)"
                 value={type}
                 onChange={(e) => setType(e.target.value)}
               >
                 {typeOptions.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
+                  <option key={opt}>{opt}</option>
                 ))}
               </Select>
 
-              {/* Added By dropdown */}
-              <Select
-                placeholder="Added by"
-                value={addedBy}
-                onChange={(e) => setAddedBy(e.target.value)}
-              >
-                {addedByOptions.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
-                ))}
-              </Select>
             </VStack>
           </ModalBody>
+
           <ModalFooter>
             <Button colorScheme="green" mr={3} onClick={addMovie}>
               Add Movie
             </Button>
             <Button onClick={onClose}>Cancel</Button>
           </ModalFooter>
+
         </ModalContent>
       </Modal>
+
     </VStack>
   );
 }

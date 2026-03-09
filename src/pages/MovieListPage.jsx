@@ -21,23 +21,28 @@ export default function MovieListPage() {
   const [movies, setMovies] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState("");
-  const [filterAddedBy, setFilterAddedBy] = useState("");
-  const [sortConfig, setSortConfig] = useState({ key: "added_at", direction: "desc" });
+  const [filterFormat, setFilterFormat] = useState("");
+  const [filterStudio, setFilterStudio] = useState("");
 
-  const typeOptions = [
-    "4K UHD",
+  const [sortConfig, setSortConfig] = useState([
+    { key: "added_at", direction: "desc" },
+  ]);
+
+  const typeOptions = ["Steelbook", "Box Set"];
+
+  const formatOptions = ["4K + BD", "4K", "BD", "DVD"];
+
+  const studioOptions = [
     "A24",
     "Arrow",
-    "Blu-ray",
     "Criterion",
-    "DVD",
     "Kino Lorber",
     "Paramount",
-    "Shout! Factory",
-    "Steelbook",
+    "Shout!",
+    "Sony",
+    "Universal",
+    "Warner Bros",
   ];
-
-  const addedByOptions = ["Sr", "Jr"];
 
   useEffect(() => {
     fetchMovies();
@@ -50,22 +55,57 @@ export default function MovieListPage() {
       .order("added_at", { ascending: false });
 
     if (error) {
-      console.error("Error fetching movies:", error);
+      console.error(error);
     } else {
       setMovies(data || []);
     }
   };
 
-  // Sorting helper
-  const requestSort = (key) => {
-    let direction = "asc";
-    if (sortConfig.key === key && sortConfig.direction === "asc") {
-      direction = "desc";
-    }
-    setSortConfig({ key, direction });
+  const requestSort = (key, event) => {
+    const isShift = event.shiftKey;
+
+    setSortConfig((prev) => {
+      const existing = prev.find((s) => s.key === key);
+
+      if (!isShift) {
+        if (existing) {
+          return [
+            {
+              key,
+              direction: existing.direction === "asc" ? "desc" : "asc",
+            },
+          ];
+        }
+
+        return [{ key, direction: "asc" }];
+      }
+
+      if (existing) {
+        return prev.map((s) =>
+          s.key === key
+            ? {
+                ...s,
+                direction: s.direction === "asc" ? "desc" : "asc",
+              }
+            : s
+        );
+      }
+
+      return [...prev, { key, direction: "asc" }];
+    });
   };
 
-  // Filtered and sorted movies
+  const getSortIcon = (key) => {
+    const sort = sortConfig.find((s) => s.key === key);
+    if (!sort) return null;
+
+    return sort.direction === "asc" ? (
+      <TriangleUpIcon ml={1} />
+    ) : (
+      <TriangleDownIcon ml={1} />
+    );
+  };
+
   const displayedMovies = useMemo(() => {
     let filtered = [...movies];
 
@@ -74,37 +114,47 @@ export default function MovieListPage() {
         m.title.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
+
+    if (filterFormat) {
+      filtered = filtered.filter((m) => m.format === filterFormat);
+    }
+
+    if (filterStudio) {
+      filtered = filtered.filter((m) => m.studio === filterStudio);
+    }
+
     if (filterType) {
       filtered = filtered.filter((m) => m.type === filterType);
     }
-    if (filterAddedBy) {
-      filtered = filtered.filter((m) => m.added_by === filterAddedBy);
-    }
 
-    if (sortConfig.key) {
-      filtered.sort((a, b) => {
-        let valA = a[sortConfig.key] || "";
-        let valB = b[sortConfig.key] || "";
+    filtered.sort((a, b) => {
+      for (const sort of sortConfig) {
+        let valA = a[sort.key] || "";
+        let valB = b[sort.key] || "";
+
         if (typeof valA === "string") valA = valA.toLowerCase();
         if (typeof valB === "string") valB = valB.toLowerCase();
 
-        if (valA < valB) return sortConfig.direction === "asc" ? -1 : 1;
-        if (valA > valB) return sortConfig.direction === "asc" ? 1 : -1;
-        return 0;
-      });
-    }
+        if (valA < valB) return sort.direction === "asc" ? -1 : 1;
+        if (valA > valB) return sort.direction === "asc" ? 1 : -1;
+      }
+
+      return 0;
+    });
 
     return filtered;
-  }, [movies, searchQuery, filterType, filterAddedBy, sortConfig]);
-
-  const getSortIcon = (key) => {
-    if (sortConfig.key !== key) return null;
-    return sortConfig.direction === "asc" ? <TriangleUpIcon ml={1} /> : <TriangleDownIcon ml={1} />;
-  };
+  }, [
+    movies,
+    searchQuery,
+    filterType,
+    filterFormat,
+    filterStudio,
+    sortConfig,
+  ]);
 
   return (
     <Box>
-      {/* Search and filters */}
+      {/* FILTERS */}
       <HStack spacing={4} mb={4} flexWrap="wrap">
         <Input
           placeholder="Search by title..."
@@ -112,52 +162,70 @@ export default function MovieListPage() {
           onChange={(e) => setSearchQuery(e.target.value)}
           maxW="250px"
         />
+
         <Select
-          placeholder="Filter by type"
-          value={filterType}
-          onChange={(e) => setFilterType(e.target.value)}
-          maxW="200px"
+          placeholder="Format"
+          value={filterFormat}
+          onChange={(e) => setFilterFormat(e.target.value)}
+          maxW="140px"
         >
-          {typeOptions.map((opt) => (
-            <option key={opt} value={opt}>
-              {opt}
-            </option>
+          {formatOptions.map((opt) => (
+            <option key={opt}>{opt}</option>
           ))}
         </Select>
+
         <Select
-          placeholder="Filter by who added"
-          value={filterAddedBy}
-          onChange={(e) => setFilterAddedBy(e.target.value)}
-          maxW="150px"
+          placeholder="Studio"
+          value={filterStudio}
+          onChange={(e) => setFilterStudio(e.target.value)}
+          maxW="180px"
         >
-          {addedByOptions.map((opt) => (
-            <option key={opt} value={opt}>
-              {opt}
-            </option>
+          {studioOptions.map((opt) => (
+            <option key={opt}>{opt}</option>
+          ))}
+        </Select>
+
+        <Select
+          placeholder="Type"
+          value={filterType}
+          onChange={(e) => setFilterType(e.target.value)}
+          maxW="180px"
+        >
+          {typeOptions.map((opt) => (
+            <option key={opt}>{opt}</option>
           ))}
         </Select>
       </HStack>
 
-      {/* Movie table */}
-      <TableContainer bg="gray.800" borderRadius="md" p={2} overflowX="auto">
-        <Table variant="simple" colorScheme="teal">
+      {/* TABLE */}
+      <TableContainer bg="gray.800" borderRadius="md" p={2}>
+        <Table variant="simple">
           <Thead>
             <Tr>
               <Th>Poster</Th>
-              <Th cursor="pointer" onClick={() => requestSort("title")}>
+
+              <Th cursor="pointer" onClick={(e) => requestSort("title", e)}>
                 Title {getSortIcon("title")}
               </Th>
-              <Th cursor="pointer" onClick={() => requestSort("year")}>
+
+              <Th cursor="pointer" onClick={(e) => requestSort("year", e)}>
                 Year {getSortIcon("year")}
               </Th>
-              <Th cursor="pointer" onClick={() => requestSort("type")}>
-                Type {getSortIcon("type")}
+
+              <Th cursor="pointer" onClick={(e) => requestSort("format", e)}>
+                Format {getSortIcon("format")}
               </Th>
-              <Th cursor="pointer" onClick={() => requestSort("added_by")}>
-                Added By {getSortIcon("added_by")}
+
+              <Th cursor="pointer" onClick={(e) => requestSort("studio", e)}>
+                Studio {getSortIcon("studio")}
+              </Th>
+
+              <Th cursor="pointer" onClick={(e) => requestSort("type", e)}>
+                Type {getSortIcon("type")}
               </Th>
             </Tr>
           </Thead>
+
           <Tbody>
             {displayedMovies.map((m) => (
               <Tr key={m.id}>
@@ -174,10 +242,12 @@ export default function MovieListPage() {
                     "-"
                   )}
                 </Td>
+
                 <Td>{m.title}</Td>
                 <Td>{m.year || "-"}</Td>
+                <Td>{m.format || "-"}</Td>
+                <Td>{m.studio || "-"}</Td>
                 <Td>{m.type || "-"}</Td>
-                <Td>{m.added_by || "-"}</Td>
               </Tr>
             ))}
           </Tbody>
