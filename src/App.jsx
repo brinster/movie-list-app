@@ -10,8 +10,15 @@ function App() {
     <Router>
       {/* Outer Box: full width, dark background */}
       <Box bg="gray.900" minH="100vh" w="100%">
-        {/* Inner Box: responsive width */}
-        <Box maxW={{ base: "95%", md: "1000px" }} mx="auto" p={4} color="white">
+        {/* Inner Box: responsive width, sits above the canvas */}
+        <Box
+          maxW={{ base: "95%", md: "1000px" }}
+          mx="auto"
+          p={4}
+          color="white"
+          position="relative"
+          zIndex={1}
+        >
           <Heading mb={6} textAlign="center">
             Brinson Movie Library
           </Heading>
