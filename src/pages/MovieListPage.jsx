@@ -18,7 +18,7 @@ export default function MovieListPage() {
 
   const typeOptions = ["Steelbook", "Box Set", "Special Edition", "None"];
   const formatOptions = ["4K + BD", "4K", "BD", "DVD"];
-  const studioOptions = ["A24", "Arrow", "Criterion", "Kino Lorber", "Lionsgate", "Paramount", "Shout!", "Sony", "Universal", "Warner Bros", "None"];
+  const studioOptions = ["A24", "Arrow", "Criterion", "Kino Lorber", "Lionsgate", "Neon", "Paramount", "Shout!", "Sony", "Universal", "Warner Bros", "None"];
   
   // Custom color mapping to match the table exactly
   const statusOptions = [
