@@ -4,7 +4,7 @@ import {
   Table, Thead, Tbody, Tr, Th, Td, TableContainer,
   Box, Input, Select, HStack, Image, Text, Button, VStack
 } from "@chakra-ui/react";
-import { TriangleDownIcon, TriangleUpIcon } from "@chakra-ui/icons";
+import { TriangleDownIcon, TriangleUpIcon, ChevronDownIcon, ChevronRightIcon } from "@chakra-ui/icons";
 import PosterCollage from "../components/PosterCollage";
 
 export default function MovieListPage() {
@@ -15,12 +15,12 @@ export default function MovieListPage() {
   const [filterStudio, setFilterStudio] = useState("");
   const [filterStatuses, setFilterStatuses] = useState([]); 
   const [sortConfig, setSortConfig] = useState([{ key: "added_at", direction: "desc" }]);
+  const [expandedCollections, setExpandedCollections] = useState([]);
 
   const typeOptions = ["Steelbook", "Box Set", "Special Edition", "None"];
   const formatOptions = ["4K + BD", "4K", "BD", "DVD"];
   const studioOptions = ["A24", "Arrow", "Criterion", "Kino Lorber", "Lionsgate", "Neon", "Paramount", "Shout!", "Sony", "Universal", "Warner Bros", "None"];
   
-  // Custom color mapping to match the table exactly
   const statusOptions = [
     { label: "👀 Let's Watch", value: "lets_watch", activeBg: "yellow.900", activeText: "yellow.300", activeBorder: "yellow.700" },
     { label: "✓ 👀 We Watched", value: "we_watched", activeBg: "green.900", activeText: "green.300", activeBorder: "green.700" },
@@ -36,6 +36,12 @@ export default function MovieListPage() {
     const { data, error } = await supabase.from("movies").select("*").order("added_at", { ascending: false });
     if (error) console.error(error);
     else setMovies(data || []);
+  };
+
+  const toggleCollection = (id) => {
+    setExpandedCollections(prev => 
+      prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
+    );
   };
 
   const toggleStatusFilter = (val) => {
@@ -87,7 +93,7 @@ export default function MovieListPage() {
     return sort.direction === "asc" ? <TriangleUpIcon ml={1} boxSize="10px" /> : <TriangleDownIcon ml={1} boxSize="10px" />;
   };
 
-  const displayedMovies = useMemo(() => {
+  const groupedMovies = useMemo(() => {
     let filtered = [...movies];
     if (searchQuery) filtered = filtered.filter((m) => m.title.toLowerCase().includes(searchQuery.toLowerCase()));
     if (filterFormat) filtered = filtered.filter((m) => filterFormat === "None" ? !m.format : m.format === filterFormat);
@@ -126,8 +132,52 @@ export default function MovieListPage() {
       }
       return 0;
     });
-    return filtered;
+
+    const groups = [];
+    const seenCollections = new Set();
+
+    filtered.forEach(m => {
+      if (m.collection_id) {
+        if (!seenCollections.has(m.collection_id)) {
+          seenCollections.add(m.collection_id);
+          const collectionMembers = filtered
+            .filter(item => item.collection_id === m.collection_id)
+            .sort((a, b) => (a.year || 0) - (b.year || 0));
+
+          groups.push({
+            type: "collection",
+            id: m.collection_id,
+            name: m.collection_name || m.collection_id,
+            members: collectionMembers,
+            format: collectionMembers[0].format,
+            studio: collectionMembers[0].studio,
+            movieType: collectionMembers[0].type
+          });
+        }
+      } else {
+        groups.push({ type: "single", ...m });
+      }
+    });
+
+    return groups;
   }, [movies, searchQuery, filterType, filterFormat, filterStudio, filterStatuses, sortConfig]);
+
+  const StatusButtons = ({ m }) => (
+    <HStack spacing={1}>
+      <Button size="xs" onClick={() => cycleWatch(m)} border="1px solid" bg={m.watch_together === "yes" ? "yellow.900" : m.watch_together === "completed" ? "green.900" : "transparent"} color={m.watch_together === "yes" ? "yellow.300" : m.watch_together === "completed" ? "green.300" : "whiteAlpha.400"} borderColor={m.watch_together === "yes" ? "yellow.700" : m.watch_together === "completed" ? "green.700" : "whiteAlpha.100"}>
+        {m.watch_together === "completed" ? "✓ 👀" : "👀"}
+      </Button>
+      <Button size="xs" onClick={() => cyclePerson(m, "sr")} border="1px solid" bg={m.sr === "watched" ? "purple.900" : "transparent"} color={m.sr === "watched" ? "purple.300" : "whiteAlpha.400"} borderColor={m.sr === "watched" ? "purple.700" : "whiteAlpha.100"}>
+        {m.sr === "watched" ? "✓ Sr" : "Sr"}
+      </Button>
+      <Button size="xs" onClick={() => cyclePerson(m, "jr")} border="1px solid" bg={m.jr === "watched" ? "blue.900" : "transparent"} color={m.jr === "watched" ? "blue.300" : "whiteAlpha.400"} borderColor={m.jr === "watched" ? "blue.700" : "whiteAlpha.100"}>
+        {m.jr === "watched" ? "✓ Jr" : "Jr"}
+      </Button>
+      <Button size="xs" onClick={() => cycleLocation(m)} border="1px solid" bg={m.location === "Sr" ? "purple.900" : m.location === "Jr" ? "blue.900" : "transparent"} color={m.location === "Sr" ? "purple.300" : m.location === "Jr" ? "blue.300" : "whiteAlpha.400"} borderColor={m.location === "Sr" ? "purple.700" : m.location === "Jr" ? "blue.700" : "whiteAlpha.100"}>
+        📍{m.location || ""}
+      </Button>
+    </HStack>
+  );
 
   return (
     <Box position="relative" zIndex={1}>
@@ -142,34 +192,15 @@ export default function MovieListPage() {
               </Select>
             ))}
           </HStack>
-
           <HStack spacing={2} flexWrap="wrap">
-            <Text fontSize="10px" fontWeight="bold" color="whiteAlpha.400" mr={1} letterSpacing="wider">STATUS FILTERS:</Text>
             {statusOptions.map((opt) => {
               const isActive = filterStatuses.includes(opt.value);
               return (
-                <Button
-                  key={opt.value}
-                  size="xs"
-                  onClick={() => toggleStatusFilter(opt.value)}
-                  borderRadius="full"
-                  fontSize="10px"
-                  variant="outline"
-                  /* Manual color matching to the table row buttons */
-                  bg={isActive ? opt.activeBg : "transparent"}
-                  color={isActive ? opt.activeText : "whiteAlpha.400"}
-                  borderColor={isActive ? opt.activeBorder : "whiteAlpha.100"}
-                  _hover={{ borderColor: isActive ? opt.activeBorder : "whiteAlpha.400", bg: isActive ? opt.activeBg : "whiteAlpha.50" }}
-                >
+                <Button key={opt.value} size="xs" onClick={() => toggleStatusFilter(opt.value)} borderRadius="full" fontSize="10px" variant="outline" bg={isActive ? opt.activeBg : "transparent"} color={isActive ? opt.activeText : "whiteAlpha.400"} borderColor={isActive ? opt.activeBorder : "whiteAlpha.100"}>
                   {opt.label}
                 </Button>
               );
             })}
-            {filterStatuses.length > 0 && (
-              <Button size="xs" variant="ghost" colorScheme="gray" color="whiteAlpha.500" onClick={() => setFilterStatuses([])} fontSize="10px" ml={2}>
-                Reset
-              </Button>
-            )}
           </HStack>
         </VStack>
 
@@ -179,45 +210,97 @@ export default function MovieListPage() {
               <Tr>
                 <Th px={4} py={3} color="whiteAlpha.400">Poster</Th>
                 <Th px={4} py={3} color="whiteAlpha.400" cursor="pointer" onClick={(e) => requestSort("title", e)}>Title {getSortIcon("title")}</Th>
-                <Th px={4} py={3} color="whiteAlpha.400" cursor="pointer" onClick={(e) => requestSort("format", e)}>Format {getSortIcon("format")}</Th>
-                <Th px={4} py={3} color="whiteAlpha.400" cursor="pointer" onClick={(e) => requestSort("studio", e)}>Studio {getSortIcon("studio")}</Th>
-                <Th px={4} py={3} color="whiteAlpha.400" cursor="pointer" onClick={(e) => requestSort("type", e)}>Type {getSortIcon("type")}</Th>
+                <Th px={4} py={3} color="whiteAlpha.400">Format</Th>
+                <Th px={4} py={3} color="whiteAlpha.400">Studio</Th>
+                <Th px={4} py={3} color="whiteAlpha.400">Type</Th>
                 <Th px={4} py={3} color="whiteAlpha.400">Status</Th>
               </Tr>
             </Thead>
             <Tbody>
-              {displayedMovies.map((m) => (
-                <Tr key={m.id} borderBottom="1px solid" borderColor="whiteAlpha.50" _hover={{ bg: "whiteAlpha.50" }}>
-                  <Td px={4} py={2}>
-                    <Box cursor="pointer" onClick={() => openLetterboxd(m.title, m.year)}>
-                      {m.poster_url ? <Image src={m.poster_url} w="36px" h="54px" objectFit="cover" borderRadius="5px" /> : <Box w="36px" h="54px" bg="whiteAlpha.100" borderRadius="5px" />}
-                    </Box>
-                  </Td>
-                  <Td px={4} py={2} color="white" fontWeight="500">
-                    <Text as="span" cursor="pointer" _hover={{ color: "teal.300", textDecoration: "underline" }} onClick={() => openLetterboxd(m.title, m.year)}>{m.title}</Text>
-                    <Text fontSize="11px" color="whiteAlpha.500">{m.year}</Text>
-                  </Td>
-                  <Td px={4} py={2} color="whiteAlpha.700" fontSize="12px">{m.format || "-"}</Td>
-                  <Td px={4} py={2} color="whiteAlpha.700" fontSize="12px">{m.studio || "-"}</Td>
-                  <Td px={4} py={2} color="whiteAlpha.700" fontSize="12px">{m.type || "-"}</Td>
-                  <Td px={4} py={2}>
-                    <HStack spacing={1}>
-                      <Button size="xs" onClick={() => cycleWatch(m)} border="1px solid" bg={m.watch_together === "yes" ? "yellow.900" : m.watch_together === "completed" ? "green.900" : "transparent"} color={m.watch_together === "yes" ? "yellow.300" : m.watch_together === "completed" ? "green.300" : "whiteAlpha.400"} borderColor={m.watch_together === "yes" ? "yellow.700" : m.watch_together === "completed" ? "green.700" : "whiteAlpha.100"}>
-                        {m.watch_together === "completed" ? "✓ 👀" : "👀"}
-                      </Button>
-                      <Button size="xs" onClick={() => cyclePerson(m, "sr")} border="1px solid" bg={m.sr === "watched" ? "purple.900" : "transparent"} color={m.sr === "watched" ? "purple.300" : "whiteAlpha.400"} borderColor={m.sr === "watched" ? "purple.700" : "whiteAlpha.100"}>
-                        {m.sr === "watched" ? "✓ Sr" : "Sr"}
-                      </Button>
-                      <Button size="xs" onClick={() => cyclePerson(m, "jr")} border="1px solid" bg={m.jr === "watched" ? "blue.900" : "transparent"} color={m.jr === "watched" ? "blue.300" : "whiteAlpha.400"} borderColor={m.jr === "watched" ? "blue.700" : "whiteAlpha.100"}>
-                        {m.jr === "watched" ? "✓ Jr" : "Jr"}
-                      </Button>
-                      <Button size="xs" onClick={() => cycleLocation(m)} border="1px solid" bg={m.location === "Sr" ? "purple.900" : m.location === "Jr" ? "blue.900" : "transparent"} color={m.location === "Sr" ? "purple.300" : m.location === "Jr" ? "blue.300" : "whiteAlpha.400"} borderColor={m.location === "Sr" ? "purple.700" : m.location === "Jr" ? "blue.700" : "whiteAlpha.100"}>
-                        📍{m.location || ""}
-                      </Button>
-                    </HStack>
-                  </Td>
-                </Tr>
-              ))}
+              {groupedMovies.map((group) => {
+                if (group.type === "collection") {
+                  const isExpanded = expandedCollections.includes(group.id);
+                  return (
+                    <React.Fragment key={group.id}>
+                      <Tr borderBottom="1px solid" borderColor="whiteAlpha.50" onClick={() => toggleCollection(group.id)} cursor="pointer" _hover={{ bg: "whiteAlpha.50" }}>
+                        <Td px={4} py={2}>
+                          <Box position="relative" w="50px" h="54px">
+                            {group.members.slice(0, 3).reverse().map((m, idx) => (
+                              <Image 
+                                key={m.id} 
+                                src={m.poster_url} 
+                                w="36px" h="54px" 
+                                objectFit="cover" 
+                                borderRadius="4px" 
+                                border="2px solid" 
+                                borderColor="gray.800"
+                                position="absolute"
+                                left={`${(2 - idx) * 6}px`} 
+                                zIndex={idx}
+                              />
+                            ))}
+                          </Box>
+                        </Td>
+                        <Td px={4} py={2}>
+                          <VStack align="start" spacing={0}>
+                            <Text color="teal.300" fontWeight="bold" fontSize="9px" letterSpacing="widest" textTransform="uppercase">BOX SET</Text>
+                            <HStack spacing={1}>
+                              {isExpanded ? <ChevronDownIcon boxSize="12px" /> : <ChevronRightIcon boxSize="12px" />}
+                              <Text color="white" fontWeight="500" fontSize="sm">{group.name}</Text>
+                            </HStack>
+                          </VStack>
+                        </Td>
+                        <Td px={4} py={2} color="whiteAlpha.600" fontSize="12px">{group.format}</Td>
+                        <Td px={4} py={2} color="whiteAlpha.600" fontSize="12px">{group.studio}</Td>
+                        <Td px={4} py={2} color="whiteAlpha.600" fontSize="12px">{group.movieType}</Td>
+                        <Td px={4} py={2}>
+                          <Text fontSize="11px" color="whiteAlpha.500" fontWeight="bold">{group.members.length} MOVIES</Text>
+                        </Td>
+                      </Tr>
+                      {/* Sub-rows now show individual posters vertically aligned with the Master row */}
+                      {isExpanded && group.members.map((m) => (
+                        <Tr key={m.id} borderBottom="1px solid" borderColor="whiteAlpha.50" bg="blackAlpha.300">
+                          <Td px={4} py={2}>
+                            <Image 
+                              src={m.poster_url} 
+                              w="36px" h="54px" 
+                              objectFit="cover" 
+                              borderRadius="4px" 
+                              opacity={0.9} 
+                              cursor="pointer" 
+                              onClick={() => openLetterboxd(m.title, m.year)} 
+                              ml="0px" // Aligns with the start of the stack above
+                            />
+                          </Td>
+                          <Td px={4} py={2}>
+                            <Text color="white" fontWeight="500" fontSize="sm" cursor="pointer" onClick={() => openLetterboxd(m.title, m.year)} _hover={{ color: "teal.300" }}>{m.title}</Text>
+                            <Text fontSize="11px" color="whiteAlpha.500">{m.year}</Text>
+                          </Td>
+                          <Td px={4} py={2} color="whiteAlpha.700" fontSize="12px">{m.format || "-"}</Td>
+                          <Td px={4} py={2} color="whiteAlpha.700" fontSize="12px">{m.studio || "-"}</Td>
+                          <Td px={4} py={2} color="whiteAlpha.700" fontSize="12px">{m.type || "-"}</Td>
+                          <Td px={4} py={2}><StatusButtons m={m} /></Td>
+                        </Tr>
+                      ))}
+                    </React.Fragment>
+                  );
+                }
+                return (
+                  <Tr key={group.id} borderBottom="1px solid" borderColor="whiteAlpha.50" _hover={{ bg: "whiteAlpha.50" }}>
+                    <Td px={4} py={2}>
+                      <Image src={group.poster_url} w="36px" h="54px" objectFit="cover" borderRadius="5px" cursor="pointer" onClick={() => openLetterboxd(group.title, group.year)} />
+                    </Td>
+                    <Td px={4} py={2}>
+                      <Text color="white" fontWeight="500" fontSize="sm" cursor="pointer" onClick={() => openLetterboxd(group.title, group.year)}>{group.title}</Text>
+                      <Text fontSize="11px" color="whiteAlpha.500">{group.year}</Text>
+                    </Td>
+                    <Td px={4} py={2} color="whiteAlpha.700" fontSize="12px">{group.format || "-"}</Td>
+                    <Td px={4} py={2} color="whiteAlpha.700" fontSize="12px">{group.studio || "-"}</Td>
+                    <Td px={4} py={2} color="whiteAlpha.700" fontSize="12px">{group.type || "-"}</Td>
+                    <Td px={4} py={2}><StatusButtons m={group} /></Td>
+                  </Tr>
+                );
+              })}
             </Tbody>
           </Table>
         </TableContainer>
