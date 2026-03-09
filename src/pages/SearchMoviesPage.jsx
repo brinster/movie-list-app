@@ -46,6 +46,7 @@ export default function SearchMoviesPage() {
     "Arrow",
     "Criterion",
     "Kino Lorber",
+    "Lionsgate",
     "Paramount",
     "Shout!",
     "Sony",
