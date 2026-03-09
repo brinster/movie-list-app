@@ -90,7 +90,7 @@ export default function MovieListPage() {
   const getSortIcon = (key) => {
     const sort = sortConfig.find((s) => s.key === key);
     if (!sort) return null;
-    return sort.direction === "asc" ? <TriangleUpIcon ml={1} boxSize="10px" /> : <TriangleDownIcon ml={1} boxSize="10px" />;
+    return sort.direction === "asc" ? <TriangleUpIcon ml={1} boxSize="9px" opacity={0.7} /> : <TriangleDownIcon ml={1} boxSize="9px" opacity={0.7} />;
   };
 
   const { filteredGroups, totalMovieCount } = useMemo(() => {
@@ -162,6 +162,29 @@ export default function MovieListPage() {
     return { filteredGroups: groups, totalMovieCount: filtered.length };
   }, [movies, searchQuery, filterType, filterFormat, filterStudio, filterStatuses, sortConfig]);
 
+  const controlStyle = {
+    bg: "gray.700",
+    border: "1px solid",
+    borderColor: "whiteAlpha.100",
+    borderRadius: "8px",
+    color: "white",
+    fontSize: "13px",
+    _placeholder: { color: "whiteAlpha.400" },
+    _focus: { borderColor: "teal.400", boxShadow: "0 0 0 1px var(--chakra-colors-teal-400)" },
+  };
+
+  const FormatBadge = ({ value }) => value ? (
+    <Box as="span" bg="teal.900" color="teal.200" fontSize="11px" fontWeight="700" letterSpacing="0.06em" px={2} py="2px" borderRadius="5px" border="1px solid" borderColor="teal.700">
+      {value}
+    </Box>
+  ) : <Text color="whiteAlpha.300" fontSize="13px">—</Text>;
+
+  const TypeBadge = ({ value }) => value ? (
+    <Box as="span" bg="whiteAlpha.100" color="whiteAlpha.700" fontSize="11px" fontWeight="600" letterSpacing="0.04em" px={2} py="2px" borderRadius="5px" border="1px solid" borderColor="whiteAlpha.200">
+      {value}
+    </Box>
+  ) : <Text color="whiteAlpha.300" fontSize="13px">—</Text>;
+
   const StatusButtons = ({ m }) => (
     <HStack spacing={1}>
       <Button size="xs" onClick={() => cycleWatch(m)} border="1px solid" bg={m.watch_together === "yes" ? "yellow.900" : m.watch_together === "completed" ? "green.900" : "transparent"} color={m.watch_together === "yes" ? "yellow.300" : m.watch_together === "completed" ? "green.300" : "whiteAlpha.400"} borderColor={m.watch_together === "yes" ? "yellow.700" : m.watch_together === "completed" ? "green.700" : "whiteAlpha.100"}>
@@ -182,12 +205,16 @@ export default function MovieListPage() {
   return (
     <Box position="relative" zIndex={1}>
       <PosterCollage movies={movies} />
-      <Box bg="gray.800" borderRadius="12px" overflow="hidden" boxShadow="0 4px 24px rgba(0,0,0,0.35)">
+      <Box bg="gray.800" borderRadius="12px" overflow="hidden" style={{ boxShadow: "0 1px 0 rgba(255,255,255,0.06) inset, 0 4px 24px rgba(0,0,0,0.35)", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
         <VStack align="stretch" spacing={3} p={4} borderBottom="1px solid" borderColor="whiteAlpha.100">
           <HStack spacing={2} flexWrap="wrap">
-            <Input placeholder="Search titles..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} maxW="200px" size="sm" bg="gray.700" color="white" />
-            {[{ p: "Format", v: filterFormat, set: setFilterFormat, opt: formatOptions }, { p: "Studio", v: filterStudio, set: setFilterStudio, opt: studioOptions }, { p: "Type", v: filterType, set: setFilterType, opt: typeOptions }].map((f) => (
-              <Select key={f.p} placeholder={f.p} value={f.v} onChange={(e) => f.set(e.target.value)} maxW="130px" size="sm" bg="gray.700" color="white">
+            <Input placeholder="Search titles..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} maxW="200px" size="sm" h="34px" {...controlStyle} />
+            {[
+                { p: "Format", v: filterFormat, set: setFilterFormat, opt: formatOptions, w: "115px" },
+                { p: "Studio", v: filterStudio, set: setFilterStudio, opt: studioOptions, w: "155px" },
+                { p: "Type", v: filterType, set: setFilterType, opt: typeOptions, w: "130px" }
+            ].map((f) => (
+              <Select key={f.p} placeholder={f.p} value={f.v} onChange={(e) => f.set(e.target.value)} maxW={f.w} size="sm" h="34px" {...controlStyle}>
                 {f.opt.map((opt) => <option key={opt} style={{ background: "#2d3748" }}>{opt}</option>)}
               </Select>
             ))}
@@ -208,12 +235,12 @@ export default function MovieListPage() {
           <Table variant="unstyled" size="sm">
             <Thead borderBottom="1px solid" borderColor="whiteAlpha.100">
               <Tr>
-                <Th px={4} py={3} color="whiteAlpha.400">Poster</Th>
-                <Th px={4} py={3} color="whiteAlpha.400" cursor="pointer" onClick={(e) => requestSort("title", e)}>Title {getSortIcon("title")}</Th>
-                <Th px={4} py={3} color="whiteAlpha.400">Format</Th>
-                <Th px={4} py={3} color="whiteAlpha.400">Studio</Th>
-                <Th px={4} py={3} color="whiteAlpha.400">Type</Th>
-                <Th px={4} py={3} color="whiteAlpha.400">Status</Th>
+                <Th px={4} py={3} color="whiteAlpha.400" fontSize="10px" letterSpacing="0.1em" textTransform="uppercase">Poster</Th>
+                <Th px={4} py={3} color="whiteAlpha.400" fontSize="10px" letterSpacing="0.1em" textTransform="uppercase" cursor="pointer" onClick={(e) => requestSort("title", e)}>Title {getSortIcon("title")}</Th>
+                <Th px={4} py={3} color="whiteAlpha.400" fontSize="10px" letterSpacing="0.1em" textTransform="uppercase">Format</Th>
+                <Th px={4} py={3} color="whiteAlpha.400" fontSize="10px" letterSpacing="0.1em" textTransform="uppercase">Studio</Th>
+                <Th px={4} py={3} color="whiteAlpha.400" fontSize="10px" letterSpacing="0.1em" textTransform="uppercase">Type</Th>
+                <Th px={4} py={3} color="whiteAlpha.400" fontSize="10px" letterSpacing="0.1em" textTransform="uppercase">Status</Th>
               </Tr>
             </Thead>
             <Tbody>
@@ -226,18 +253,7 @@ export default function MovieListPage() {
                         <Td px={4} py={2}>
                           <Box position="relative" w="50px" h="54px">
                             {group.members.slice(0, 3).reverse().map((m, idx) => (
-                              <Image 
-                                key={m.id} 
-                                src={m.poster_url} 
-                                w="36px" h="54px" 
-                                objectFit="cover" 
-                                borderRadius="4px" 
-                                border="2px solid" 
-                                borderColor="gray.800"
-                                position="absolute"
-                                left={`${(2 - idx) * 6}px`} 
-                                zIndex={idx}
-                              />
+                              <Image key={m.id} src={m.poster_url} w="36px" h="54px" objectFit="cover" borderRadius="4px" border="2px solid" borderColor="gray.800" position="absolute" left={`${(2 - idx) * 6}px`} zIndex={idx} />
                             ))}
                           </Box>
                         </Td>
@@ -246,13 +262,13 @@ export default function MovieListPage() {
                             <Text color="teal.300" fontWeight="bold" fontSize="9px" letterSpacing="widest" textTransform="uppercase">BOX SET</Text>
                             <HStack spacing={1}>
                               {isExpanded ? <ChevronDownIcon boxSize="12px" /> : <ChevronRightIcon boxSize="12px" />}
-                              <Text color="white" fontWeight="500" fontSize="sm">{group.name}</Text>
+                              <Text color="white" fontWeight="500" fontSize="13px">{group.name}</Text>
                             </HStack>
                           </VStack>
                         </Td>
-                        <Td px={4} py={2} color="whiteAlpha.600" fontSize="12px">{group.format}</Td>
-                        <Td px={4} py={2} color="whiteAlpha.600" fontSize="12px">{group.studio}</Td>
-                        <Td px={4} py={2} color="whiteAlpha.600" fontSize="12px">{group.movieType}</Td>
+                        <Td px={4} py={2}><FormatBadge value={group.format} /></Td>
+                        <Td px={4} py={2} color="whiteAlpha.500" fontSize="13px">{group.studio || "—"}</Td>
+                        <Td px={4} py={2}><TypeBadge value={group.movieType} /></Td>
                         <Td px={4} py={2}>
                           <Text fontSize="11px" color="whiteAlpha.500" fontWeight="bold">{group.members.length} MOVIES</Text>
                         </Td>
@@ -260,24 +276,15 @@ export default function MovieListPage() {
                       {isExpanded && group.members.map((m) => (
                         <Tr key={m.id} borderBottom="1px solid" borderColor="whiteAlpha.50" bg="blackAlpha.300">
                           <Td px={4} py={2}>
-                            <Image 
-                              src={m.poster_url} 
-                              w="36px" h="54px" 
-                              objectFit="cover" 
-                              borderRadius="4px" 
-                              opacity={0.9} 
-                              cursor="pointer" 
-                              onClick={() => openLetterboxd(m.title, m.year)} 
-                              ml="0px"
-                            />
+                            <Image src={m.poster_url} w="36px" h="54px" objectFit="cover" borderRadius="4px" opacity={0.9} cursor="pointer" onClick={() => openLetterboxd(m.title, m.year)} />
                           </Td>
                           <Td px={4} py={2}>
-                            <Text color="white" fontWeight="500" fontSize="sm" cursor="pointer" onClick={() => openLetterboxd(m.title, m.year)} _hover={{ color: "teal.300" }}>{m.title}</Text>
+                            <Text color="white" fontWeight="500" fontSize="13px" cursor="pointer" onClick={() => openLetterboxd(m.title, m.year)} _hover={{ color: "teal.300" }}>{m.title}</Text>
                             <Text fontSize="11px" color="whiteAlpha.500">{m.year}</Text>
                           </Td>
-                          <Td px={4} py={2} color="whiteAlpha.700" fontSize="12px">{m.format || "-"}</Td>
-                          <Td px={4} py={2} color="whiteAlpha.700" fontSize="12px">{m.studio || "-"}</Td>
-                          <Td px={4} py={2} color="whiteAlpha.700" fontSize="12px">{m.type || "-"}</Td>
+                          <Td px={4} py={2}><FormatBadge value={m.format} /></Td>
+                          <Td px={4} py={2} color="whiteAlpha.500" fontSize="13px">{m.studio || "—"}</Td>
+                          <Td px={4} py={2}><TypeBadge value={m.type} /></Td>
                           <Td px={4} py={2}><StatusButtons m={m} /></Td>
                         </Tr>
                       ))}
@@ -290,12 +297,12 @@ export default function MovieListPage() {
                       <Image src={group.poster_url} w="36px" h="54px" objectFit="cover" borderRadius="5px" cursor="pointer" onClick={() => openLetterboxd(group.title, group.year)} />
                     </Td>
                     <Td px={4} py={2}>
-                      <Text color="white" fontWeight="500" fontSize="sm" cursor="pointer" onClick={() => openLetterboxd(group.title, group.year)}>{group.title}</Text>
+                      <Text color="white" fontWeight="500" fontSize="13px" cursor="pointer" onClick={() => openLetterboxd(group.title, group.year)}>{group.title}</Text>
                       <Text fontSize="11px" color="whiteAlpha.500">{group.year}</Text>
                     </Td>
-                    <Td px={4} py={2} color="whiteAlpha.700" fontSize="12px">{group.format || "-"}</Td>
-                    <Td px={4} py={2} color="whiteAlpha.700" fontSize="12px">{group.studio || "-"}</Td>
-                    <Td px={4} py={2} color="whiteAlpha.700" fontSize="12px">{group.type || "-"}</Td>
+                    <Td px={4} py={2}><FormatBadge value={group.format} /></Td>
+                    <Td px={4} py={2} color="whiteAlpha.500" fontSize="13px">{group.studio || "—"}</Td>
+                    <Td px={4} py={2}><TypeBadge value={group.type} /></Td>
                     <Td px={4} py={2}><StatusButtons m={group} /></Td>
                   </Tr>
                 );
@@ -304,9 +311,8 @@ export default function MovieListPage() {
           </Table>
         </TableContainer>
         
-        {/* Footer with total count */}
         <Flex justify="flex-end" p={4} borderTop="1px solid" borderColor="whiteAlpha.100" bg="whiteAlpha.50">
-          <Text color="whiteAlpha.600" fontSize="xs" fontWeight="bold">
+          <Text color="whiteAlpha.600" fontSize="11px" fontWeight="bold" letterSpacing="0.04em">
             TOTAL: {totalMovieCount} {totalMovieCount === 1 ? 'MOVIE' : 'MOVIES'}
           </Text>
         </Flex>
