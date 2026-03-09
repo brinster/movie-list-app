@@ -57,6 +57,12 @@ export default function MovieListPage() {
       : <TriangleDownIcon ml={1} boxSize="9px" opacity={0.7} />;
   };
 
+  const cycleWatch = async (m) => {
+    const next = !m.watch_together ? "yes" : m.watch_together === "yes" ? "completed" : null;
+    const { error } = await supabase.from("movies").update({ watch_together: next }).eq("id", m.id);
+    if (!error) setMovies((prev) => prev.map((x) => x.id === m.id ? { ...x, watch_together: next } : x));
+  };
+
   const displayedMovies = useMemo(() => {
     let filtered = [...movies];
     if (searchQuery) filtered = filtered.filter((m) => m.title.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -169,6 +175,7 @@ export default function MovieListPage() {
                   { label: "Format", key: "format" },
                   { label: "Studio", key: "studio" },
                   { label: "Type",   key: "type" },
+                  { label: "Watch Together", key: null },
                 ].map(({ label, key }) => (
                   <Th
                     key={label}
@@ -216,6 +223,29 @@ export default function MovieListPage() {
                     {m.type
                       ? <Box as="span" bg="whiteAlpha.100" color="whiteAlpha.700" fontSize="11px" fontWeight="600" letterSpacing="0.04em" px={2} py="2px" borderRadius="5px" border="1px solid" borderColor="whiteAlpha.200">{m.type}</Box>
                       : <Text color="whiteAlpha.300" fontSize="13px">—</Text>}
+                  </Td>
+                  <Td px={4} py={2}>
+                    <Box
+                      as="button"
+                      onClick={() => cycleWatch(m)}
+                      px={2}
+                      py="3px"
+                      borderRadius="5px"
+                      fontSize="11px"
+                      fontWeight="700"
+                      letterSpacing="0.04em"
+                      border="1px solid"
+                      transition="all 0.15s"
+                      style={
+                        !m.watch_together
+                          ? { background: "transparent", color: "rgba(255,255,255,0.2)", borderColor: "rgba(255,255,255,0.1)", cursor: "pointer" }
+                          : m.watch_together === "yes"
+                          ? { background: "rgba(236,201,75,0.15)", color: "#f6e05e", borderColor: "rgba(236,201,75,0.35)", cursor: "pointer" }
+                          : { background: "rgba(72,187,120,0.15)", color: "#68d391", borderColor: "rgba(72,187,120,0.35)", cursor: "pointer" }
+                      }
+                    >
+                      {!m.watch_together ? "—" : m.watch_together === "yes" ? "👀 Yes" : "✓ Watched"}
+                    </Box>
                   </Td>
                 </Tr>
               ))}

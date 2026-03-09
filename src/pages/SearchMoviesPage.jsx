@@ -22,6 +22,7 @@ export default function SearchMoviesPage() {
   const [studio, setStudio] = useState("");
   const [type, setType] = useState("");
 
+  const [watchTogether, setWatchTogether] = useState(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   const typeOptions = ["Box Set", "Special Edition", "Steelbook"];
@@ -55,7 +56,7 @@ export default function SearchMoviesPage() {
 
   const openAddModal = (movie) => {
     setSelectedMovie(movie);
-    setFormat(""); setStudio(""); setType("");
+    setFormat(""); setStudio(""); setType(""); setWatchTogether(null);
     onOpen();
   };
 
@@ -69,6 +70,7 @@ export default function SearchMoviesPage() {
       format: format || null,
       studio: studio || null,
       type: type || null,
+      watch_together: watchTogether || null,
     });
     if (error) { console.error(error); alert("Failed to add movie."); }
     else { alert(`${selectedMovie.title} added!`); onClose(); }
@@ -227,6 +229,39 @@ export default function SearchMoviesPage() {
                   {options.map((opt) => <option key={opt} style={{ background: "#2d3748" }}>{opt}</option>)}
                 </Select>
               ))}
+
+              {/* Watch Together toggle */}
+              <Box w="100%" pt={1}>
+                <Text fontSize="11px" fontWeight="700" letterSpacing="0.1em" textTransform="uppercase" color="whiteAlpha.400" mb={2}>
+                  Watch Together
+                </Text>
+                <HStack spacing={2}>
+                  {[
+                    { value: null,        label: "—",       active: watchTogether === null },
+                    { value: "yes",       label: "👀 Yes",  active: watchTogether === "yes" },
+                    { value: "completed", label: "✓ Watched",  active: watchTogether === "completed" },
+                  ].map(({ value, label, active }) => (
+                    <Button
+                      key={label}
+                      size="xs"
+                      h="28px"
+                      px={3}
+                      borderRadius="6px"
+                      fontSize="12px"
+                      fontWeight="600"
+                      border="1px solid"
+                      onClick={() => setWatchTogether(value)}
+                      bg={active ? (value === "yes" ? "yellow.900" : value === "completed" ? "green.900" : "whiteAlpha.200") : "transparent"}
+                      color={active ? (value === "yes" ? "yellow.300" : value === "completed" ? "green.300" : "white") : "whiteAlpha.400"}
+                      borderColor={active ? (value === "yes" ? "yellow.700" : value === "completed" ? "green.700" : "whiteAlpha.300") : "whiteAlpha.100"}
+                      _hover={{ opacity: 0.85 }}
+                      transition="all 0.15s"
+                    >
+                      {label}
+                    </Button>
+                  ))}
+                </HStack>
+              </Box>
             </VStack>
           </ModalBody>
           <ModalFooter borderTop="1px solid" borderColor="whiteAlpha.100" gap={2}>
