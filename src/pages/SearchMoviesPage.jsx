@@ -35,8 +35,9 @@ export default function SearchMoviesPage() {
   const navigate = useNavigate();
 
   const typeOptions = [
+    "Box Set",
+    "Special Edition",
     "Steelbook",
-    "Box Set"
   ];
 
   const formatOptions = ["4K + BD", "4K", "BD", "DVD"];

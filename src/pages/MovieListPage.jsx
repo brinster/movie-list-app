@@ -28,10 +28,8 @@ export default function MovieListPage() {
     { key: "added_at", direction: "desc" },
   ]);
 
-  const typeOptions = ["Steelbook", "Box Set"];
-
-  const formatOptions = ["4K + BD", "4K", "BD", "DVD"];
-
+  const typeOptions = ["Box Set", "Special Edition", "Steelbook", "None"];
+  const formatOptions = ["4K + BD", "4K", "BD", "DVD", "None"];
   const studioOptions = [
     "A24",
     "Arrow",
@@ -43,6 +41,7 @@ export default function MovieListPage() {
     "Sony",
     "Universal",
     "Warner Bros",
+    "None",
   ];
 
   useEffect(() => {
@@ -110,24 +109,35 @@ export default function MovieListPage() {
   const displayedMovies = useMemo(() => {
     let filtered = [...movies];
 
+    // Title search
     if (searchQuery) {
       filtered = filtered.filter((m) =>
         m.title.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
+    // Format filter
     if (filterFormat) {
-      filtered = filtered.filter((m) => m.format === filterFormat);
+      filtered = filtered.filter((m) =>
+        filterFormat === "None" ? !m.format : m.format === filterFormat
+      );
     }
 
+    // Studio filter
     if (filterStudio) {
-      filtered = filtered.filter((m) => m.studio === filterStudio);
+      filtered = filtered.filter((m) =>
+        filterStudio === "None" ? !m.studio : m.studio === filterStudio
+      );
     }
 
+    // Type filter
     if (filterType) {
-      filtered = filtered.filter((m) => m.type === filterType);
+      filtered = filtered.filter((m) =>
+        filterType === "None" ? !m.type : m.type === filterType
+      );
     }
 
+    // Sorting
     filtered.sort((a, b) => {
       for (const sort of sortConfig) {
         let valA = a[sort.key] || "";
@@ -164,6 +174,7 @@ export default function MovieListPage() {
           maxW="250px"
         />
 
+        {/* Format first */}
         <Select
           placeholder="Format"
           value={filterFormat}
@@ -175,6 +186,7 @@ export default function MovieListPage() {
           ))}
         </Select>
 
+        {/* Studio second */}
         <Select
           placeholder="Studio"
           value={filterStudio}
@@ -186,6 +198,7 @@ export default function MovieListPage() {
           ))}
         </Select>
 
+        {/* Type third */}
         <Select
           placeholder="Type"
           value={filterType}
@@ -204,23 +217,18 @@ export default function MovieListPage() {
           <Thead>
             <Tr>
               <Th>Poster</Th>
-
               <Th cursor="pointer" onClick={(e) => requestSort("title", e)}>
                 Title {getSortIcon("title")}
               </Th>
-
               <Th cursor="pointer" onClick={(e) => requestSort("year", e)}>
                 Year {getSortIcon("year")}
               </Th>
-
               <Th cursor="pointer" onClick={(e) => requestSort("format", e)}>
                 Format {getSortIcon("format")}
               </Th>
-
               <Th cursor="pointer" onClick={(e) => requestSort("studio", e)}>
                 Studio {getSortIcon("studio")}
               </Th>
-
               <Th cursor="pointer" onClick={(e) => requestSort("type", e)}>
                 Type {getSortIcon("type")}
               </Th>
@@ -243,7 +251,6 @@ export default function MovieListPage() {
                     "-"
                   )}
                 </Td>
-
                 <Td>{m.title}</Td>
                 <Td>{m.year || "-"}</Td>
                 <Td>{m.format || "-"}</Td>
