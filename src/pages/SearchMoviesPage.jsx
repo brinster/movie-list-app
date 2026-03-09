@@ -2,18 +2,22 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "../supabaseClient";
 import {
-  Input, Button, Box, VStack, HStack, Image, Text, SimpleGrid,
+  Input, Button, Box, HStack, Image, Text, SimpleGrid,
   Modal, ModalOverlay, ModalContent, ModalHeader, ModalFooter,
-  ModalBody, ModalCloseButton, Select, useDisclosure,
+  ModalBody, ModalCloseButton, Select, useDisclosure, VStack,
 } from "@chakra-ui/react";
 import PosterCollage from "../components/PosterCollage";
+
+const boxStyle = {
+  boxShadow: "0 1px 0 rgba(255,255,255,0.06) inset, 0 4px 24px rgba(0,0,0,0.35)",
+  borderTop: "1px solid rgba(255,255,255,0.08)",
+};
 
 export default function SearchMoviesPage() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [movies, setMovies] = useState([]);
-
   const [format, setFormat] = useState("");
   const [studio, setStudio] = useState("");
   const [type, setType] = useState("");
@@ -37,12 +41,11 @@ export default function SearchMoviesPage() {
 
   const searchMovies = async () => {
     if (!query) return;
-    const encodedQuery = encodeURIComponent(query);
     try {
       const res = await fetch(
-        `https://api.themoviedb.org/3/search/movie?api_key=${process.env.REACT_APP_TMDB_KEY}&query=${encodedQuery}`
+        `https://api.themoviedb.org/3/search/movie?api_key=${process.env.REACT_APP_TMDB_KEY}&query=${encodeURIComponent(query)}`
       );
-      if (!res.ok) { console.error("TMDB API error", res.status, await res.text()); return; }
+      if (!res.ok) return;
       const data = await res.json();
       setResults(data.results || []);
     } catch (err) {
@@ -58,7 +61,7 @@ export default function SearchMoviesPage() {
 
   const addMovie = async () => {
     if (!selectedMovie) return;
-    const insertData = {
+    const { error } = await supabase.from("movies").insert({
       tmdb_id: parseInt(selectedMovie.id),
       title: selectedMovie.title,
       year: selectedMovie.release_date ? selectedMovie.release_date.split("-")[0] : null,
@@ -66,89 +69,198 @@ export default function SearchMoviesPage() {
       format: format || null,
       studio: studio || null,
       type: type || null,
-    };
-    const { error } = await supabase.from("movies").insert(insertData);
-    if (error) { console.error("Supabase insert error:", error); alert("Failed to add movie. Check console."); }
-    else { alert(`${selectedMovie.title} added successfully!`); onClose(); }
+    });
+    if (error) { console.error(error); alert("Failed to add movie."); }
+    else { alert(`${selectedMovie.title} added!`); onClose(); }
+  };
+
+  const selectStyle = {
+    bg: "gray.700",
+    border: "1px solid",
+    borderColor: "whiteAlpha.100",
+    borderRadius: "8px",
+    color: "white",
+    fontSize: "13px",
+    _focus: { borderColor: "teal.400", boxShadow: "0 0 0 1px var(--chakra-colors-teal-400)" },
   };
 
   return (
     <Box position="relative" zIndex={1} isolation="isolate">
       <PosterCollage movies={movies} />
 
-      {/* Back button + search bar — opaque, above canvas */}
-      <Box bg="gray.800" borderRadius="md" p={3} mb={4} position="relative" zIndex={2}>
-        <VStack spacing={3} align="stretch">
-          <HStack>
-            <Input
-              placeholder="Search movies"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") searchMovies(); }}
-            />
-            <Button onClick={searchMovies} colorScheme="teal">Search</Button>
-          </HStack>
-        </VStack>
+      {/* Search bar */}
+      <Box
+        bg="gray.800"
+        borderRadius="12px"
+        p={4}
+        mb={3}
+        position="relative"
+        zIndex={2}
+        style={boxStyle}
+      >
+        <HStack spacing={3}>
+          <Input
+            placeholder="Search for a movie..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") searchMovies(); }}
+            bg="gray.700"
+            border="1px solid"
+            borderColor="whiteAlpha.100"
+            borderRadius="8px"
+            color="white"
+            fontSize="14px"
+            h="38px"
+            _placeholder={{ color: "whiteAlpha.400" }}
+            _focus={{ borderColor: "teal.400", boxShadow: "0 0 0 1px var(--chakra-colors-teal-400)" }}
+          />
+          <Button
+            onClick={searchMovies}
+            flexShrink={0}
+            bg="teal.500"
+            color="white"
+            borderRadius="8px"
+            fontWeight="600"
+            fontSize="13px"
+            h="38px"
+            px={5}
+            border="1px solid"
+            borderColor="teal.400"
+            _hover={{ bg: "teal.400", transform: "translateY(-1px)", boxShadow: "0 4px 12px rgba(0,0,0,0.3)" }}
+            _active={{ transform: "translateY(0)" }}
+            transition="all 0.15s ease"
+          >
+            Search
+          </Button>
+        </HStack>
       </Box>
 
+      {/* Results */}
       {results.length > 0 && (
-      <Box position="relative" zIndex={2} bg="gray.800" borderRadius="md" p={3} mt={0}>
-        <SimpleGrid columns={[1, 2]} spacing={4}>
-          {results.map((m) => (
-            <Box
-              key={m.id}
-              bg="gray.800"
-              borderRadius="md"
-              overflow="hidden"
-              p={3}
-              cursor="pointer"
-              onClick={() => openAddModal(m)}
-              textAlign="center"
-              display="flex"
-              flexDirection="column"
-              alignItems="center"
-              _hover={{ bg: "gray.700", transform: "scale(1.02)", transition: "all 0.15s" }}
-            >
-              {m.poster_path ? (
-                <>
-                  <Image src={`https://image.tmdb.org/t/p/w200${m.poster_path}`} alt={m.title} mb={2} borderRadius="md" />
-                  <Text fontWeight="bold">{m.title} ({m.release_date?.split("-")[0] || "N/A"})</Text>
-                </>
-              ) : (
-                <Box display="flex" flexDirection="column" justifyContent="flex-end" flex="1" w="100%">
-                  <Text fontWeight="bold">{m.title} ({m.release_date?.split("-")[0] || "N/A"})</Text>
-                </Box>
-              )}
-            </Box>
-          ))}
-        </SimpleGrid>
-      </Box>
+        <Box
+          bg="gray.800"
+          borderRadius="12px"
+          p={4}
+          position="relative"
+          zIndex={2}
+          style={boxStyle}
+        >
+          <Text fontSize="11px" fontWeight="700" letterSpacing="0.12em" textTransform="uppercase" color="whiteAlpha.400" mb={3}>
+            {results.length} Results
+          </Text>
+          <SimpleGrid columns={[2, 3, 4]} spacing={3}>
+            {results.map((m) => (
+              <Box
+                key={m.id}
+                onClick={() => openAddModal(m)}
+                cursor="pointer"
+                borderRadius="8px"
+                overflow="hidden"
+                bg="gray.700"
+                border="1px solid"
+                borderColor="whiteAlpha.100"
+                transition="all 0.15s ease"
+                _hover={{
+                  transform: "translateY(-3px)",
+                  boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+                  borderColor: "teal.500",
+                }}
+              >
+                {m.poster_path ? (
+                  <>
+                    <Image
+                      src={`https://image.tmdb.org/t/p/w200${m.poster_path}`}
+                      alt={m.title}
+                      w="100%"
+                      display="block"
+                    />
+                    <Box p={2}>
+                      <Text fontSize="12px" fontWeight="600" color="white" noOfLines={2} lineHeight="1.35">{m.title}</Text>
+                      <Text fontSize="11px" color="whiteAlpha.400" mt="2px">{m.release_date?.split("-")[0] || "N/A"}</Text>
+                    </Box>
+                  </>
+                ) : (
+                  <Box p={3} h="160px" display="flex" flexDirection="column" justifyContent="flex-end">
+                    <Text fontSize="12px" fontWeight="600" color="white" noOfLines={3} lineHeight="1.35">{m.title}</Text>
+                    <Text fontSize="11px" color="whiteAlpha.400" mt="2px">{m.release_date?.split("-")[0] || "N/A"}</Text>
+                  </Box>
+                )}
+              </Box>
+            ))}
+          </SimpleGrid>
+        </Box>
       )}
 
-        <Modal isOpen={isOpen} onClose={onClose}>
-          <ModalOverlay />
-          <ModalContent>
-            <ModalHeader>Add {selectedMovie?.title}</ModalHeader>
-            <ModalCloseButton />
-            <ModalBody>
-              <VStack spacing={4}>
-                <Select placeholder="Format" value={format} onChange={(e) => setFormat(e.target.value)}>
-                  {formatOptions.map((opt) => <option key={opt}>{opt}</option>)}
+      {/* Add Modal */}
+      <Modal isOpen={isOpen} onClose={onClose} isCentered>
+        <ModalOverlay bg="blackAlpha.700" backdropFilter="blur(6px)" />
+        <ModalContent
+          bg="gray.800"
+          border="1px solid"
+          borderColor="whiteAlpha.100"
+          borderRadius="12px"
+          color="white"
+          style={boxStyle}
+        >
+          <ModalHeader pb={3} borderBottom="1px solid" borderColor="whiteAlpha.100">
+            <Text fontSize="15px" fontWeight="700" color="white">{selectedMovie?.title}</Text>
+            <Text fontSize="12px" color="whiteAlpha.400" fontWeight="400" mt="2px">
+              {selectedMovie?.release_date?.split("-")[0]} · Choose details to save
+            </Text>
+          </ModalHeader>
+          <ModalCloseButton color="whiteAlpha.500" _hover={{ color: "white" }} />
+          <ModalBody py={5}>
+            <VStack spacing={3}>
+              {[
+                { placeholder: "Format", value: format, onChange: setFormat, options: formatOptions },
+                { placeholder: "Studio (optional)", value: studio, onChange: setStudio, options: studioOptions },
+                { placeholder: "Type (optional)", value: type, onChange: setType, options: typeOptions },
+              ].map(({ placeholder, value, onChange, options }) => (
+                <Select
+                  key={placeholder}
+                  placeholder={placeholder}
+                  value={value}
+                  onChange={(e) => onChange(e.target.value)}
+                  h="38px"
+                  {...selectStyle}
+                >
+                  {options.map((opt) => <option key={opt} style={{ background: "#2d3748" }}>{opt}</option>)}
                 </Select>
-                <Select placeholder="Studio (optional)" value={studio} onChange={(e) => setStudio(e.target.value)}>
-                  {studioOptions.map((opt) => <option key={opt}>{opt}</option>)}
-                </Select>
-                <Select placeholder="Type (optional)" value={type} onChange={(e) => setType(e.target.value)}>
-                  {typeOptions.map((opt) => <option key={opt}>{opt}</option>)}
-                </Select>
-              </VStack>
-            </ModalBody>
-            <ModalFooter>
-              <Button colorScheme="green" mr={3} onClick={addMovie}>Add Movie</Button>
-              <Button onClick={onClose}>Cancel</Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
+              ))}
+            </VStack>
+          </ModalBody>
+          <ModalFooter borderTop="1px solid" borderColor="whiteAlpha.100" gap={2}>
+            <Button
+              onClick={addMovie}
+              bg="teal.500"
+              color="white"
+              borderRadius="8px"
+              fontWeight="600"
+              fontSize="13px"
+              border="1px solid"
+              borderColor="teal.400"
+              _hover={{ bg: "teal.400" }}
+              transition="all 0.15s"
+            >
+              Add to Library
+            </Button>
+            <Button
+              onClick={onClose}
+              bg="gray.700"
+              color="whiteAlpha.700"
+              borderRadius="8px"
+              fontWeight="500"
+              fontSize="13px"
+              border="1px solid"
+              borderColor="whiteAlpha.100"
+              _hover={{ bg: "gray.600", color: "white" }}
+              transition="all 0.15s"
+            >
+              Cancel
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Box>
   );
 }
