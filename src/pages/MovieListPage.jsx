@@ -37,6 +37,7 @@ export default function MovieListPage() {
     "Arrow",
     "Criterion",
     "Kino Lorber",
+    "Lionsgate",
     "Paramount",
     "Shout!",
     "Sony",
