@@ -216,7 +216,7 @@ export default function SearchMoviesPage() {
 
               {/* 2. Type and Collection Logic */}
               <Box>
-                <Text fontSize="xs" color="whiteAlpha.500" mb={1}>Entry Type</Text>
+                <Text fontSize="xs" color="whiteAlpha.500" mb={1}>Type</Text>
                 <Select placeholder="Select Type" value={type} onChange={(e) => setType(e.target.value)} {...selectStyle}>
                   {typeOptions.map(o => <option key={o} style={{ background: "#2d3748" }}>{o}</option>)}
                 </Select>

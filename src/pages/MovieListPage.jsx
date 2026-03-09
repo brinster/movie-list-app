@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import { supabase } from "../supabaseClient";
 import {
   Table, Thead, Tbody, Tr, Th, Td, TableContainer,
-  Box, Input, Select, HStack, Image, Text, Button, VStack
+  Box, Input, Select, HStack, Image, Text, Button, VStack, Flex
 } from "@chakra-ui/react";
 import { TriangleDownIcon, TriangleUpIcon, ChevronDownIcon, ChevronRightIcon } from "@chakra-ui/icons";
 import PosterCollage from "../components/PosterCollage";
@@ -93,7 +93,7 @@ export default function MovieListPage() {
     return sort.direction === "asc" ? <TriangleUpIcon ml={1} boxSize="10px" /> : <TriangleDownIcon ml={1} boxSize="10px" />;
   };
 
-  const groupedMovies = useMemo(() => {
+  const { filteredGroups, totalMovieCount } = useMemo(() => {
     let filtered = [...movies];
     if (searchQuery) filtered = filtered.filter((m) => m.title.toLowerCase().includes(searchQuery.toLowerCase()));
     if (filterFormat) filtered = filtered.filter((m) => filterFormat === "None" ? !m.format : m.format === filterFormat);
@@ -146,7 +146,7 @@ export default function MovieListPage() {
 
           groups.push({
             type: "collection",
-            id: m.collection_name, // Using name as ID for expansion toggles
+            id: m.collection_name, 
             name: m.collection_name,
             members: collectionMembers,
             format: collectionMembers[0].format,
@@ -159,7 +159,7 @@ export default function MovieListPage() {
       }
     });
 
-    return groups;
+    return { filteredGroups: groups, totalMovieCount: filtered.length };
   }, [movies, searchQuery, filterType, filterFormat, filterStudio, filterStatuses, sortConfig]);
 
   const StatusButtons = ({ m }) => (
@@ -217,7 +217,7 @@ export default function MovieListPage() {
               </Tr>
             </Thead>
             <Tbody>
-              {groupedMovies.map((group) => {
+              {filteredGroups.map((group) => {
                 if (group.type === "collection") {
                   const isExpanded = expandedCollections.includes(group.id);
                   return (
@@ -303,6 +303,13 @@ export default function MovieListPage() {
             </Tbody>
           </Table>
         </TableContainer>
+        
+        {/* Footer with total count */}
+        <Flex justify="flex-end" p={4} borderTop="1px solid" borderColor="whiteAlpha.100" bg="whiteAlpha.50">
+          <Text color="whiteAlpha.600" fontSize="xs" fontWeight="bold">
+            TOTAL: {totalMovieCount} {totalMovieCount === 1 ? 'MOVIE' : 'MOVIES'}
+          </Text>
+        </Flex>
       </Box>
     </Box>
   );
