@@ -1,23 +1,14 @@
 // src/pages/MovieListPage.jsx
-import React, { useEffect, useState, useMemo, useRef } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { supabase } from "../supabaseClient";
 import {
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  TableContainer,
-  Box,
-  Input,
-  Select,
-  HStack,
-  Image,
+  Table, Thead, Tbody, Tr, Th, Td, TableContainer,
+  Box, Input, Select, HStack, Image,
 } from "@chakra-ui/react";
 import { TriangleDownIcon, TriangleUpIcon } from "@chakra-ui/icons";
+import PosterCollage from "../components/PosterCollage";
 
-export default function MovieListPage({ titleBottom = 0 }) {
+export default function MovieListPage() {
   const [movies, setMovies] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState("");
@@ -32,160 +23,13 @@ export default function MovieListPage({ titleBottom = 0 }) {
     "Paramount", "Shout!", "Sony", "Universal", "Warner Bros", "None",
   ];
 
-  const canvasRef = useRef(null);
-  const drawCancelRef = useRef(false);
-
   useEffect(() => { fetchMovies(); }, []);
-
-  // Clear canvas immediately on mount so old collage never shows on navigation
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-  }, []);
-
-  useEffect(() => {
-    drawCanvasBackground();
-    // eslint-disable-next-line
-  }, [movies]);
 
   const fetchMovies = async () => {
     const { data, error } = await supabase
-      .from("movies")
-      .select("*")
-      .order("added_at", { ascending: false });
+      .from("movies").select("*").order("added_at", { ascending: false });
     if (error) console.error(error);
     else setMovies(data || []);
-  };
-
-  const drawCanvasBackground = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    // Cancel any previous in-progress draw
-    drawCancelRef.current = true;
-    const cancelled = { value: false };
-    drawCancelRef.current = cancelled;
-
-    const ctx = canvas.getContext("2d");
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    const containerWidth = Math.min(window.innerWidth, 1000);
-    const marginWidth = (window.innerWidth - containerWidth) / 2;
-
-
-    const postersWithUrls = movies
-      .filter((m) => m.poster_url)
-      .slice()
-      .sort((a, b) => new Date(a.added_at) - new Date(b.added_at));
-
-    const POSTER_RATIO = 2 / 3;
-    const baseWidth = 110;
-    const GAP = 6;
-    const MAX_ATTEMPTS = 30;
-    const placed = [];
-
-    const overlaps = (x, y, w, h) => {
-      for (const r of placed) {
-        if (x < r.x + r.w + GAP && x + w + GAP > r.x &&
-            y < r.y + r.h + GAP && y + h + GAP > r.y) return true;
-      }
-      return false;
-    };
-
-    const loadedImages = [];
-    let loadedCount = 0;
-    let hasPlaced = false;
-    const total = Math.min(postersWithUrls.length, 500);
-    if (total === 0) return;
-
-    const drawPoster = (img, x, y, w, h, angle) => {
-      ctx.save();
-      ctx.translate(x + w / 2, y + h / 2);
-      ctx.rotate(angle);
-
-      // Drop shadow for depth
-      ctx.shadowColor = "rgba(0,0,0,0.4)";
-      ctx.shadowBlur = 6;
-      ctx.shadowOffsetX = 2;
-      ctx.shadowOffsetY = 3;
-
-      // Draw poster image
-      ctx.globalAlpha = 1;
-      ctx.drawImage(img, -w / 2, -h / 2, w, h);
-
-      // Reset shadow before drawing overlays
-      ctx.shadowColor = "transparent";
-      ctx.shadowBlur = 0;
-      ctx.shadowOffsetX = 0;
-      ctx.shadowOffsetY = 0;
-
-      // Thin dark border
-      ctx.strokeStyle = "rgba(0,0,0,0.3)";
-      ctx.lineWidth = 1;
-      ctx.strokeRect(-w / 2, -h / 2, w, h);
-
-      // Top-left highlight edge
-      const highlight = ctx.createLinearGradient(-w / 2, -h / 2, -w / 2 + 6, -h / 2 + 6);
-      highlight.addColorStop(0, "rgba(255,255,255,0.12)");
-      highlight.addColorStop(1, "rgba(255,255,255,0)");
-      ctx.fillStyle = highlight;
-      ctx.fillRect(-w / 2, -h / 2, w, h);
-
-      // Bottom-right inner shadow
-      const shadow = ctx.createLinearGradient(w / 2, h / 2, w / 2 - 12, h / 2 - 12);
-      shadow.addColorStop(0, "rgba(0,0,0,0.1)");
-      shadow.addColorStop(1, "rgba(0,0,0,0)");
-      ctx.fillStyle = shadow;
-      ctx.fillRect(-w / 2, -h / 2, w, h);
-
-      ctx.restore();
-    };
-
-    const placeAll = () => {
-      loadedImages.forEach(({ img, w, h }) => {
-        const angle = (Math.random() * 36 - 18) * (Math.PI / 180);
-
-        // Allow posters to bleed slightly off screen edges for a more natural look
-        const BLEED = 30;
-        const randPos = () => {
-          const isLeft = Math.random() < 0.5;
-          const x = isLeft
-            ? -BLEED + Math.random() * Math.max(0, marginWidth - w + BLEED)
-            : containerWidth + marginWidth + Math.random() * Math.max(0, marginWidth - w + BLEED);
-          const y = -BLEED + Math.random() * (window.innerHeight - h + BLEED * 2);
-          return { x, y };
-        };
-
-        let { x: foundX, y: foundY } = randPos();
-        for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-          const { x, y } = randPos();
-          if (!overlaps(x, y, w, h)) { foundX = x; foundY = y; break; }
-        }
-
-        placed.push({ x: foundX, y: foundY, w, h });
-        drawPoster(img, foundX, foundY, w, h, angle);
-      });
-    };
-
-    postersWithUrls.slice(0, total).forEach((m) => {
-      const img = new window.Image();
-      img.src = m.poster_url;
-      img.onload = () => {
-        loadedImages.push({ img, w: baseWidth, h: baseWidth / POSTER_RATIO });
-        loadedCount++;
-        if (loadedCount === total && !hasPlaced && !cancelled.value) { hasPlaced = true; placeAll(); }
-      };
-      img.onerror = () => {
-        loadedCount++;
-        if (loadedCount === total && !hasPlaced && !cancelled.value) { hasPlaced = true; placeAll(); }
-      };
-    });
   };
 
   const requestSort = (key, event) => {
@@ -240,14 +84,7 @@ export default function MovieListPage({ titleBottom = 0 }) {
 
   return (
     <Box position="relative" zIndex={1} isolation="isolate">
-      <canvas
-        ref={canvasRef}
-        style={{
-          position: "fixed", top: 0, left: 0,
-          width: "100vw", height: "100vh",
-          zIndex: -1, pointerEvents: "none",
-        }}
-      />
+      <PosterCollage movies={movies} />
 
       <Box bg="gray.800" borderRadius="md" overflow="hidden">
         <Box p={3} borderBottom="1px solid" borderColor="gray.700">
