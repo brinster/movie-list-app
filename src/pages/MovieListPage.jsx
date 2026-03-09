@@ -38,9 +38,9 @@ export default function MovieListPage() {
     else setMovies(data || []);
   };
 
-  const toggleCollection = (id) => {
+  const toggleCollection = (name) => {
     setExpandedCollections(prev => 
-      prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
+      prev.includes(name) ? prev.filter(c => c !== name) : [...prev, name]
     );
   };
 
@@ -137,17 +137,17 @@ export default function MovieListPage() {
     const seenCollections = new Set();
 
     filtered.forEach(m => {
-      if (m.collection_id) {
-        if (!seenCollections.has(m.collection_id)) {
-          seenCollections.add(m.collection_id);
+      if (m.collection_name) {
+        if (!seenCollections.has(m.collection_name)) {
+          seenCollections.add(m.collection_name);
           const collectionMembers = filtered
-            .filter(item => item.collection_id === m.collection_id)
+            .filter(item => item.collection_name === m.collection_name)
             .sort((a, b) => (a.year || 0) - (b.year || 0));
 
           groups.push({
             type: "collection",
-            id: m.collection_id,
-            name: m.collection_name || m.collection_id,
+            id: m.collection_name, // Using name as ID for expansion toggles
+            name: m.collection_name,
             members: collectionMembers,
             format: collectionMembers[0].format,
             studio: collectionMembers[0].studio,
@@ -257,7 +257,6 @@ export default function MovieListPage() {
                           <Text fontSize="11px" color="whiteAlpha.500" fontWeight="bold">{group.members.length} MOVIES</Text>
                         </Td>
                       </Tr>
-                      {/* Sub-rows now show individual posters vertically aligned with the Master row */}
                       {isExpanded && group.members.map((m) => (
                         <Tr key={m.id} borderBottom="1px solid" borderColor="whiteAlpha.50" bg="blackAlpha.300">
                           <Td px={4} py={2}>
@@ -269,7 +268,7 @@ export default function MovieListPage() {
                               opacity={0.9} 
                               cursor="pointer" 
                               onClick={() => openLetterboxd(m.title, m.year)} 
-                              ml="0px" // Aligns with the start of the stack above
+                              ml="0px"
                             />
                           </Td>
                           <Td px={4} py={2}>
