@@ -13,14 +13,14 @@ export default function MovieListPage() {
   const [filterType, setFilterType] = useState("");
   const [filterFormat, setFilterFormat] = useState("");
   const [filterStudio, setFilterStudio] = useState("");
-  const [filterStatuses, setFilterStatuses] = useState([]); 
+  const [filterStatuses, setFilterStatuses] = useState([]);
   const [sortConfig, setSortConfig] = useState([{ key: "added_at", direction: "desc" }]);
   const [expandedCollections, setExpandedCollections] = useState([]);
 
   const typeOptions = ["Steelbook", "Box Set", "Special Edition", "None"];
   const formatOptions = ["4K + BD", "4K", "BD", "DVD"];
   const studioOptions = ["A24", "Arrow", "Criterion", "Kino Lorber", "Lionsgate", "Neon", "Paramount", "Shout!", "Sony", "Universal", "Warner Bros", "None"];
-  
+
   const statusOptions = [
     { label: "👀 Let's Watch", value: "lets_watch", activeBg: "yellow.900", activeText: "yellow.300", activeBorder: "yellow.700" },
     { label: "✓ 👀 We Watched", value: "we_watched", activeBg: "green.900", activeText: "green.300", activeBorder: "green.700" },
@@ -39,13 +39,13 @@ export default function MovieListPage() {
   };
 
   const toggleCollection = (name) => {
-    setExpandedCollections(prev => 
+    setExpandedCollections(prev =>
       prev.includes(name) ? prev.filter(c => c !== name) : [...prev, name]
     );
   };
 
   const toggleStatusFilter = (val) => {
-    setFilterStatuses(prev => 
+    setFilterStatuses(prev =>
       prev.includes(val) ? prev.filter(item => item !== val) : [...prev, val]
     );
   };
@@ -99,21 +99,19 @@ export default function MovieListPage() {
     if (filterFormat) filtered = filtered.filter((m) => filterFormat === "None" ? !m.format : m.format === filterFormat);
     if (filterStudio) filtered = filtered.filter((m) => filterStudio === "None" ? !m.studio : m.studio === filterStudio);
     if (filterType) filtered = filtered.filter((m) => filterType === "None" ? !m.type : m.type === filterType);
-    
+
     if (filterStatuses.length > 0) {
-      filtered = filtered.filter((m) => {
-        return filterStatuses.every(status => {
-          switch (status) {
-            case "lets_watch": return m.watch_together === "yes";
-            case "we_watched": return m.watch_together === "completed";
-            case "sr_watched": return m.sr === "watched";
-            case "jr_watched": return m.jr === "watched";
-            case "loc_sr": return m.location === "Sr";
-            case "loc_jr": return m.location === "Jr";
-            default: return true;
-          }
-        });
-      });
+      filtered = filtered.filter((m) => filterStatuses.every(status => {
+        switch (status) {
+          case "lets_watch": return m.watch_together === "yes";
+          case "we_watched": return m.watch_together === "completed";
+          case "sr_watched": return m.sr === "watched";
+          case "jr_watched": return m.jr === "watched";
+          case "loc_sr": return m.location === "Sr";
+          case "loc_jr": return m.location === "Jr";
+          default: return true;
+        }
+      }));
     }
 
     filtered.sort((a, b) => {
@@ -143,10 +141,9 @@ export default function MovieListPage() {
           const collectionMembers = filtered
             .filter(item => item.collection_name === m.collection_name)
             .sort((a, b) => (a.year || 0) - (b.year || 0));
-
           groups.push({
             type: "collection",
-            id: m.collection_name, 
+            id: m.collection_name,
             name: m.collection_name,
             members: collectionMembers,
             format: collectionMembers[0].format,
@@ -163,30 +160,22 @@ export default function MovieListPage() {
   }, [movies, searchQuery, filterType, filterFormat, filterStudio, filterStatuses, sortConfig]);
 
   const controlStyle = {
-    bg: "gray.700",
-    border: "1px solid",
-    borderColor: "whiteAlpha.100",
-    borderRadius: "8px",
-    color: "white",
-    fontSize: "13px",
+    bg: "gray.700", border: "1px solid", borderColor: "whiteAlpha.100", borderRadius: "8px",
+    color: "white", fontSize: "13px",
     _placeholder: { color: "whiteAlpha.400" },
     _focus: { borderColor: "teal.400", boxShadow: "0 0 0 1px var(--chakra-colors-teal-400)" },
   };
 
   const FormatBadge = ({ value }) => value ? (
-    <Box as="span" bg="teal.900" color="teal.200" fontSize="11px" fontWeight="700" letterSpacing="0.06em" px={2} py="2px" borderRadius="5px" border="1px solid" borderColor="teal.700">
-      {value}
-    </Box>
+    <Box as="span" bg="teal.900" color="teal.200" fontSize="11px" fontWeight="700" letterSpacing="0.06em" px={2} py="2px" borderRadius="5px" border="1px solid" borderColor="teal.700">{value}</Box>
   ) : <Text color="whiteAlpha.300" fontSize="13px">—</Text>;
 
   const TypeBadge = ({ value }) => value ? (
-    <Box as="span" bg="whiteAlpha.100" color="whiteAlpha.700" fontSize="11px" fontWeight="600" letterSpacing="0.04em" px={2} py="2px" borderRadius="5px" border="1px solid" borderColor="whiteAlpha.200">
-      {value}
-    </Box>
+    <Box as="span" bg="whiteAlpha.100" color="whiteAlpha.700" fontSize="11px" fontWeight="600" letterSpacing="0.04em" px={2} py="2px" borderRadius="5px" border="1px solid" borderColor="whiteAlpha.200">{value}</Box>
   ) : <Text color="whiteAlpha.300" fontSize="13px">—</Text>;
 
   const StatusButtons = ({ m }) => (
-    <HStack spacing={1}>
+    <HStack spacing={1} whiteSpace="nowrap">
       <Button size="xs" onClick={() => cycleWatch(m)} border="1px solid" bg={m.watch_together === "yes" ? "yellow.900" : m.watch_together === "completed" ? "green.900" : "transparent"} color={m.watch_together === "yes" ? "yellow.300" : m.watch_together === "completed" ? "green.300" : "whiteAlpha.400"} borderColor={m.watch_together === "yes" ? "yellow.700" : m.watch_together === "completed" ? "green.700" : "whiteAlpha.100"}>
         {m.watch_together === "completed" ? "✓ 👀" : "👀"}
       </Button>
@@ -203,16 +192,16 @@ export default function MovieListPage() {
   );
 
   return (
-    <Box position="relative" zIndex={1}>
+    <Box position="relative" zIndex={1} w="100%">
       <PosterCollage movies={movies} />
       <Box bg="gray.800" borderRadius="12px" overflow="hidden" style={{ boxShadow: "0 1px 0 rgba(255,255,255,0.06) inset, 0 4px 24px rgba(0,0,0,0.35)", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
         <VStack align="stretch" spacing={3} p={4} borderBottom="1px solid" borderColor="whiteAlpha.100">
           <HStack spacing={2} flexWrap="wrap">
             <Input placeholder="Search titles..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} maxW="200px" size="sm" h="34px" {...controlStyle} />
             {[
-                { p: "Format", v: filterFormat, set: setFilterFormat, opt: formatOptions, w: "115px" },
-                { p: "Studio", v: filterStudio, set: setFilterStudio, opt: studioOptions, w: "155px" },
-                { p: "Type", v: filterType, set: setFilterType, opt: typeOptions, w: "130px" }
+              { p: "Format", v: filterFormat, set: setFilterFormat, opt: formatOptions, w: "115px" },
+              { p: "Studio", v: filterStudio, set: setFilterStudio, opt: studioOptions, w: "155px" },
+              { p: "Type", v: filterType, set: setFilterType, opt: typeOptions, w: "130px" }
             ].map((f) => (
               <Select key={f.p} placeholder={f.p} value={f.v} onChange={(e) => f.set(e.target.value)} maxW={f.w} size="sm" h="34px" {...controlStyle}>
                 {f.opt.map((opt) => <option key={opt} style={{ background: "#2d3748" }}>{opt}</option>)}
@@ -231,16 +220,16 @@ export default function MovieListPage() {
           </HStack>
         </VStack>
 
-        <TableContainer>
-          <Table variant="unstyled" size="sm">
+        <TableContainer overflowX={{ base: "auto", lg: "hidden" }}>
+          <Table variant="unstyled" size="sm" layout="auto" width="100%">
             <Thead borderBottom="1px solid" borderColor="whiteAlpha.100">
               <Tr>
-                <Th px={4} py={3} color="whiteAlpha.400" fontSize="10px" letterSpacing="0.1em" textTransform="uppercase">Poster</Th>
+                <Th px={4} py={3} color="whiteAlpha.400" fontSize="10px" letterSpacing="0.1em" textTransform="uppercase" minW="60px" whiteSpace="nowrap">Poster</Th>
                 <Th px={4} py={3} color="whiteAlpha.400" fontSize="10px" letterSpacing="0.1em" textTransform="uppercase" cursor="pointer" onClick={(e) => requestSort("title", e)}>Title {getSortIcon("title")}</Th>
-                <Th px={4} py={3} color="whiteAlpha.400" fontSize="10px" letterSpacing="0.1em" textTransform="uppercase">Format</Th>
-                <Th px={4} py={3} color="whiteAlpha.400" fontSize="10px" letterSpacing="0.1em" textTransform="uppercase">Studio</Th>
-                <Th px={4} py={3} color="whiteAlpha.400" fontSize="10px" letterSpacing="0.1em" textTransform="uppercase">Type</Th>
-                <Th px={4} py={3} color="whiteAlpha.400" fontSize="10px" letterSpacing="0.1em" textTransform="uppercase">Status</Th>
+                <Th px={4} py={3} color="whiteAlpha.400" fontSize="10px" letterSpacing="0.1em" textTransform="uppercase" w="100px">Format</Th>
+                <Th px={4} py={3} color="whiteAlpha.400" fontSize="10px" letterSpacing="0.1em" textTransform="uppercase" w="140px">Studio</Th>
+                <Th px={4} py={3} color="whiteAlpha.400" fontSize="10px" letterSpacing="0.1em" textTransform="uppercase" w="130px">Type</Th>
+                <Th px={4} py={3} color="whiteAlpha.400" fontSize="10px" letterSpacing="0.1em" textTransform="uppercase" w="220px">Status</Th>
               </Tr>
             </Thead>
             <Tbody>
@@ -250,10 +239,10 @@ export default function MovieListPage() {
                   return (
                     <React.Fragment key={group.id}>
                       <Tr borderBottom="1px solid" borderColor="whiteAlpha.50" onClick={() => toggleCollection(group.id)} cursor="pointer" _hover={{ bg: "whiteAlpha.50" }}>
-                        <Td px={4} py={2}>
+                        <Td px={4} py={2} whiteSpace="nowrap">
                           <Box position="relative" w="50px" h="54px">
-                            {group.members.slice(0, 3).reverse().map((m, idx) => (
-                              <Image key={m.id} src={m.poster_url} w="36px" h="54px" objectFit="cover" borderRadius="4px" border="2px solid" borderColor="gray.800" position="absolute" left={`${(2 - idx) * 6}px`} zIndex={idx} />
+                            {group.members.slice(0, 3).map((m, idx) => (
+                              <Image key={m.id} src={m.poster_url} w="36px" h="54px" minW="36px" objectFit="cover" borderRadius="4px" border="2px solid" borderColor="gray.800" position="absolute" left={`${idx * 6}px`} zIndex={3 - idx} />
                             ))}
                           </Box>
                         </Td>
@@ -275,10 +264,10 @@ export default function MovieListPage() {
                       </Tr>
                       {isExpanded && group.members.map((m) => (
                         <Tr key={m.id} borderBottom="1px solid" borderColor="whiteAlpha.50" bg="blackAlpha.300">
-                          <Td px={4} py={2}>
-                            <Image src={m.poster_url} w="36px" h="54px" objectFit="cover" borderRadius="4px" opacity={0.9} cursor="pointer" onClick={() => openLetterboxd(m.title, m.year)} />
+                          <Td px={4} py={2} whiteSpace="nowrap">
+                            <Image src={m.poster_url} w="36px" h="54px" minW="36px" objectFit="cover" borderRadius="4px" opacity={0.9} cursor="pointer" onClick={() => openLetterboxd(m.title, m.year)} />
                           </Td>
-                          <Td px={4} py={2}>
+                          <Td px={4} py={2} pl="32px">
                             <Text color="white" fontWeight="500" fontSize="13px" cursor="pointer" onClick={() => openLetterboxd(m.title, m.year)} _hover={{ color: "teal.300" }}>{m.title}</Text>
                             <Text fontSize="11px" color="whiteAlpha.500">{m.year}</Text>
                           </Td>
@@ -293,8 +282,8 @@ export default function MovieListPage() {
                 }
                 return (
                   <Tr key={group.id} borderBottom="1px solid" borderColor="whiteAlpha.50" _hover={{ bg: "whiteAlpha.50" }}>
-                    <Td px={4} py={2}>
-                      <Image src={group.poster_url} w="36px" h="54px" objectFit="cover" borderRadius="5px" cursor="pointer" onClick={() => openLetterboxd(group.title, group.year)} />
+                    <Td px={4} py={2} whiteSpace="nowrap">
+                      <Image src={group.poster_url} w="36px" h="54px" minW="36px" objectFit="cover" borderRadius="5px" cursor="pointer" onClick={() => openLetterboxd(group.title, group.year)} />
                     </Td>
                     <Td px={4} py={2}>
                       <Text color="white" fontWeight="500" fontSize="13px" cursor="pointer" onClick={() => openLetterboxd(group.title, group.year)}>{group.title}</Text>
@@ -310,10 +299,11 @@ export default function MovieListPage() {
             </Tbody>
           </Table>
         </TableContainer>
-        
-        <Flex justify="flex-end" p={4} borderTop="1px solid" borderColor="whiteAlpha.100" bg="whiteAlpha.50">
-          <Text color="whiteAlpha.600" fontSize="11px" fontWeight="bold" letterSpacing="0.04em">
-            TOTAL: {totalMovieCount} {totalMovieCount === 1 ? 'MOVIE' : 'MOVIES'}
+
+        {/* Slim footer */}
+        <Flex justify="flex-end" px={4} py={2} borderTop="1px solid" borderColor="whiteAlpha.100">
+          <Text color="whiteAlpha.400" fontSize="11px" letterSpacing="0.04em">
+            {totalMovieCount} {totalMovieCount === 1 ? "MOVIE" : "MOVIES"}
           </Text>
         </Flex>
       </Box>

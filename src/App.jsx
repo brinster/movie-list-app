@@ -13,7 +13,7 @@ function AppContent() {
   return (
     <Box bg="gray.900" minH="100vh" w="100%">
       <Box
-        maxW={{ base: "95%", md: "1000px" }}
+        maxW={{ base: "95%", md: "1100px" }}
         mx="auto"
         pt={5}
         pb={8}

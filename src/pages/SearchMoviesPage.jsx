@@ -155,16 +155,10 @@ export default function SearchMoviesPage() {
                         <Button onClick={searchMovies} colorScheme="teal" px={8}>Search</Button>
                     </HStack>
 
-                    {(type === "Box Set" || format || studio) && (
+                    {type === "Box Set" && (
                         <HStack justify="space-between" bg="whiteAlpha.50" p={2} borderRadius="md" border="1px dashed" borderColor="whiteAlpha.200">
                             <Text fontSize="11px" color="teal.300" fontWeight="bold">
-                                ACTIVE BOX SET: {
-                                    [
-                                        type === "Box Set" ? `${collectionName || "Unnamed Box Set"}` : "Single Movie",
-                                        format,
-                                        studio
-                                    ].filter(Boolean).join(" | ")
-                                }
+                                ACTIVE BOX SET: {collectionName || "Unnamed Box Set"}{format ? ` | ${format}` : ""}{studio ? ` | ${studio}` : ""}
                             </Text>
                             <Button size="xs" variant="ghost" colorScheme="orange" onClick={resetForm}>Clear All</Button>
                         </HStack>
